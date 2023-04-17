@@ -55,6 +55,10 @@ class ModelNet(Dataset):
                  split='train',
                  transform=None
                  ):
+
+        for i in range(20):
+            print("Initializing Model Net")
+        
         self.root = os.path.join(data_dir, 'modelnet40_normal_resampled')
         self.npoints = num_points
         self.use_normals = use_normals

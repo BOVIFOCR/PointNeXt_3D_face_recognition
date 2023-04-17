@@ -2,7 +2,7 @@
 num_points: 1024  # number of poins actually used in training and evaluation
 dataset:
   common:
-    NAME: ModelNet40Ply2048
+    NAME: synfacesGPM
     data_dir: './data/ModelNet40Ply2048'
   train:
     split: train
@@ -23,7 +23,7 @@ batch_size: 32
 dataloader:
   num_workers: 6
 
-num_classes: 40
+num_classes: 1000
 # ---------------------------------------------------------------------------- #
 # Training cfgs
 # ---------------------------------------------------------------------------- #

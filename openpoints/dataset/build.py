@@ -7,6 +7,8 @@ from easydict import EasyDict as edict
 from openpoints.utils import registry
 from openpoints.transforms import build_transforms_from_cfg
 
+from data_loader.loader_synthetic_faces_gpmm.tree_synthetic_faces import TreeSyntheticFacesGPMM 
+
 DATASETS = registry.Registry('dataset')
 
 
@@ -36,6 +38,13 @@ def build_dataset_from_cfg(cfg, default_args=None):
         Dataset: a constructed dataset specified by dataset_name.
     """
     return DATASETS.build(cfg, default_args=default_args)
+
+def build_synthetic_faces_dataset(root,num_classes,num_expressions):
+    """
+        Return a list that consists of images path from synthetic faces dataset
+        
+    """
+    TreeSyntheticFacesGPMM().get_pointclouds_paths_with_subjects_names(dir_path=self.root, num_classes=num_classes, num_expressions=num_expressions)
 
 def worker_init_fn(worker_id):
     np.random.seed(np.random.get_state()[1][0] + worker_id)
@@ -69,11 +78,19 @@ def build_dataloader_from_cfg(batch_size,
             split_cfg.split = split
         split_cfg.transform = data_transform
         dataset = build_dataset_from_cfg(dataset_cfg.common, split_cfg)
+        #print(type(dataset))
+        #print(dataset)
+        #print(dir(dataset))
+        #print(dataset.data)
+        #print(dataset.data.shape)
 
     collate_fn = dataset.collate_fn if hasattr(dataset, 'collate_fn') else None
     collate_fn = dataloader_cfg.collate_fn if dataloader_cfg.get('collate_fn', None) is not None else collate_fn
     collate_fn = eval(collate_fn) if isinstance(collate_fn, str) else collate_fn
-
+    
+    print("collate fn ")
+    print(collate_fn)
+    
     shuffle = split == 'train'
     if distributed:
         sampler = torch.utils.data.distributed.DistributedSampler(dataset, shuffle=shuffle)

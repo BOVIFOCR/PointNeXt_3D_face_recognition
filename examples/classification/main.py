@@ -64,4 +64,5 @@ if __name__ == "__main__":
         print('using mp spawn for distributed training')
         mp.spawn(main, nprocs=cfg.world_size, args=(cfg, args.profile))
     else:
+        print("not using muti processing")
         main(0, cfg, profile=args.profile)

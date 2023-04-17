@@ -1,4 +1,5 @@
 import os, logging, csv, numpy as np, wandb
+import pickle
 from tqdm import tqdm
 import torch, torch.nn as nn
 from torch import distributed as dist
@@ -235,11 +236,36 @@ def train_one_epoch(model, train_loader, optimizer, scheduler, epoch, cfg):
             data[key] = data[key].cuda(non_blocking=True)
         num_iter += 1
         points = data['x']
+        target = data['y']        
+        data['y'] = data['y'].flatten()
         target = data['y']
-        """ bebug
-        from openpoints.dataset import vis_points
-        vis_points(data['pos'].cpu().numpy()[0])
-        """
+        
+        #print("What is data pos")
+        #print(data['pos'].shape)
+        #print(data['x'].shape)
+        #print(data['y'])
+        #print(data['y'].shape)
+        
+        
+        # Convert the tensor to a numpy array
+        pt = points.cpu()
+        pt = pt.numpy()
+        
+        print(pt.shape)
+        print(target.shape)
+        
+        # Open the file in binary mode and use pickle.dump() to save the array to disk
+        with open('/home/pbqv20/PointNeXt/modelNet3dPointCloud/pc.npy', 'wb') as file:
+            pickle.dump(pt, file)
+        
+        
+        
+        
+        
+        # bebug
+        #from openpoints.dataset import vis_points
+        #vis_points(data['pos'].cpu().numpy()[0])
+        
         num_curr_pts = points.shape[1]
         if num_curr_pts > npoints:  # point resampling strategy
             if npoints == 1024:
@@ -261,6 +287,30 @@ def train_one_epoch(model, train_loader, optimizer, scheduler, epoch, cfg):
 
         data['pos'] = points[:, :, :3].contiguous()
         data['x'] = points[:, :, :cfg.model.in_channels].transpose(1, 2).contiguous()
+        
+        #print("data after resampling")
+        #print(data['pos'].shape)
+        #print(data['x'].shape)
+        #print(data['y'].shape)
+        
+        pty = data['x']
+        ptx = data['pos']
+        cls = data['y']
+        
+        '''
+        pty = pt.cpu().numpy()
+        ptx = pt.cpu().numpy()
+        cls = cls.cpu().numpy()
+            
+        # Open the file in binary mode and use pickle.dump() to save the array to disk
+        with open('/home/pbqv20/PointNeXt/modelNet3dPointCloud/pty2.npy', 'wb') as file:
+            pickle.dump(pty, file)
+        with open('/home/pbqv20/PointNeXt/modelNet3dPointCloud/cls.npy', 'wb') as file:
+            pickle.dump(cls, file)
+        with open('/home/pbqv20/PointNeXt/modelNet3dPointCloud/ptx2.npy', 'wb') as file:
+            pickle.dump(ptx, file)
+        '''
+        
         logits, loss = model.get_logits_loss(data, target) if not hasattr(model, 'module') else model.module.get_logits_loss(data, target)
         loss.backward()
 
@@ -294,13 +344,85 @@ def validate(model, val_loader, cfg):
     for idx, data in pbar:
         for key in data.keys():
             data[key] = data[key].cuda(non_blocking=True)
-        target = data['y']
+     
         points = data['x']
-        points = points[:, :npoints]
+        target = data['y']        
+        data['y'] = data['y'].flatten()
+        target = data['y']
+        
+        #print("What is data pos")
+        #print(data['pos'].shape)
+        #print(data['x'].shape)
+        #print(data['y'])
+        #print(data['y'].shape)
+        
+        
+        # Convert the tensor to a numpy array
+        pt = points.cpu()
+        pt = pt.numpy()
+        
+        print(pt.shape)
+        print(target.shape)
+        
+        # Open the file in binary mode and use pickle.dump() to save the array to disk
+        with open('/home/pbqv20/PointNeXt/modelNet3dPointCloud/pc.npy', 'wb') as file:
+            pickle.dump(pt, file)
+        
+        
+        
+        
+        
+        # bebug
+        #from openpoints.dataset import vis_points
+        #vis_points(data['pos'].cpu().numpy()[0])
+        
+        num_curr_pts = points.shape[1]
+        if num_curr_pts > npoints:  # point resampling strategy
+            if npoints == 1024:
+                point_all = 1200
+            elif npoints == 4096:
+                point_all = 4800
+            elif npoints == 8192:
+                point_all = 8192
+            else:
+                raise NotImplementedError()
+            if  points.size(1) < point_all:
+                point_all = points.size(1)
+            fps_idx = furthest_point_sample(
+                points[:, :, :3].contiguous(), point_all)
+            fps_idx = fps_idx[:, np.random.choice(
+                point_all, npoints, False)]
+            points = torch.gather(
+                points, 1, fps_idx.unsqueeze(-1).long().expand(-1, -1, points.shape[-1]))
+
         data['pos'] = points[:, :, :3].contiguous()
         data['x'] = points[:, :, :cfg.model.in_channels].transpose(1, 2).contiguous()
+        
+        #print("data after resampling")
+        #print(data['pos'].shape)
+        #print(data['x'].shape)
+        #print(data['y'].shape)
+        
+        pty = data['x']
+        ptx = data['pos']
+        cls = data['y']
+        
+        pty = pty.cpu().numpy()
+        ptx = ptx.cpu().numpy()
+        cls = cls.cpu().numpy()
+            
+        # Open the file in binary mode and use pickle.dump() to save the array to disk
+        with open('/home/pbqv20/PointNeXt/modelNet3dPointCloud/pty.npy', 'wb') as file:
+            pickle.dump(pty, file)
+        with open('/home/pbqv20/PointNeXt/modelNet3dPointCloud/cls.npy', 'wb') as file:
+            pickle.dump(cls, file)
+        with open('/home/pbqv20/PointNeXt/modelNet3dPointCloud/ptx.npy', 'wb') as file:
+            pickle.dump(ptx, file)
+        
         logits = model(data)
         cm.update(logits.argmax(dim=1), target)
+        
+        
 
     tp, count = cm.tp, cm.count
     if cfg.distributed:

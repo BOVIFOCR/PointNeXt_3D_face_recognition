@@ -8,3 +8,4 @@ from .semantic_kitti import *
 from .scanobjectnn import *
 from .shapenetpart import *
 from .scannetv2 import *
+from .synfacesGPM import *
