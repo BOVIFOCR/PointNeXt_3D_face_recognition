@@ -9,3 +9,4 @@ from .scanobjectnn import *
 from .shapenetpart import *
 from .scannetv2 import *
 from .synfacesGPMM import *
+from .ms1mv2_3d import *
