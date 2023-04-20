@@ -19,7 +19,9 @@ datatransforms:
   val: [PointsToTensor]
   kwargs:
     shift: [0.2, 0.2, 0.2]
-batch_size: 32
+batch_size: 32     # original
+# batch_size: 16
+# batch_size: 8
 dataloader:
   num_workers: 6
 
@@ -50,8 +52,9 @@ grad_norm_clip: 1
 criterion_args:   # args passed to openpoints/loss/build.py -> ArcFace.__init__()
   NAME: ArcFace   # for face recognition
   margin: 0.5
+  # scale: 32
   scale: 16
-  num_classes: 100
+  num_classes: 0   # value set in file 'openpoints/dataset/ms1mv2_3d/ms1mv2_3d_loader.py'
 
 # ---------------------------------------------------------------------------- #
 # io and misc
@@ -61,8 +64,10 @@ print_freq: 10
 val_freq: 1
 
 # ----------------- Model related
-val_batch_size: 64
-pretrained_path: null 
+val_batch_size: 64     # original
+# val_batch_size: 32
+# val_batch_size: 16
+pretrained_path: null
 
 wandb:
   project: PointNeXt-MS1MV2-3D
