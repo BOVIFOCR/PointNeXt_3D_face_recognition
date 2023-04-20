@@ -1,1 +1,0 @@
-from .syn_loader import synfacesGPM

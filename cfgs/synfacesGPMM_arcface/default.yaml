@@ -2,8 +2,8 @@
 num_points: 1024  # number of poins actually used in training and evaluation
 dataset:
   common:
-    NAME: synfacesGPM
-    data_dir: './data/ModelNet40Ply2048'
+    NAME: synfacesGPMM
+    data_dir: '/datasets1/bjgbiesseck/SyntheticFacesGPMM'
   train:
     split: train
     num_points: 1024  # in training, use sampled 1024 points for data augmentation. 
@@ -23,7 +23,7 @@ batch_size: 32
 dataloader:
   num_workers: 6
 
-num_classes: 1000
+num_classes: 100
 # ---------------------------------------------------------------------------- #
 # Training cfgs
 # ---------------------------------------------------------------------------- #
@@ -34,7 +34,8 @@ num_classes: 1000
 # ---------------------------------------------------------------------------- #
 # this one is better. 
 sched: cosine
-epochs: 100
+# epochs: 100
+epochs: 50
 warmup_epochs: 0
 min_lr: null 
 
@@ -42,18 +43,20 @@ min_lr: null
 lr: 0.001
 optimizer:
  NAME: 'adamw'
- weight_decay: 0.05 
+ weight_decay: 0.05
 
 grad_norm_clip: 1
 
-criterion_args:
-  NAME: SmoothCrossEntropy
-  label_smoothing: 0.2
+criterion_args:   # args passed to openpoints/loss/build.py -> ArcFace.__init__()
+  NAME: ArcFace   # for face recognition
+  margin: 0.5
+  scale: 16
+  num_classes: 100
 
 # ---------------------------------------------------------------------------- #
 # io and misc
 # ---------------------------------------------------------------------------- #
-log_dir: 'modelnet40'
+log_dir: 'synfacesGPMM'
 print_freq: 10
 val_freq: 1
 
@@ -62,6 +65,6 @@ val_batch_size: 64
 pretrained_path: null 
 
 wandb:
-  project: PointNeXt-ModelNet40Ply2048
+  project: PointNeXt-SyntheticFacesGPMM
 
 seed: null

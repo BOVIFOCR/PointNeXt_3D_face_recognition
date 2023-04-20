@@ -1,4 +1,5 @@
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import CrossEntropyLoss, BCEWithLogitsLoss
 from openpoints.utils import registry
@@ -7,6 +8,54 @@ LOSS = registry.Registry('loss')
 LOSS.register_module(name='CrossEntropy', module=CrossEntropyLoss)
 LOSS.register_module(name='CrossEntropyLoss', module=CrossEntropyLoss)
 LOSS.register_module(name='BCEWithLogitsLoss', module=BCEWithLogitsLoss)
+
+
+@LOSS.register_module()
+class ArcFace(torch.nn.Module):
+    def __init__(self, margin=0.5,
+                 scale=32.0,
+                 num_classes=None,
+                 weight=None,
+                 return_valid=False
+                 ):
+        super(ArcFace, self).__init__()
+        self.margin = margin
+        self.scale = scale
+        self.num_classes = num_classes
+        self.return_valid = return_valid
+
+        if weight is not None:
+            self.weight = torch.from_numpy(weight).float().cuda(
+                non_blocking=True).squeeze()
+        else:
+            self.weight = None
+
+    def forward(self, pred, gt):
+        if len(pred.shape)>2:
+            pred = pred.transpose(1, 2).reshape(-1, pred.shape[1])
+        gt = gt.contiguous().view(-1)
+
+        cosine = pred
+
+        one_hot = torch.zeros_like(pred).scatter(1, gt.view(-1, 1), 1)
+        mask = one_hot
+
+        # cosine = F.linear(F.normalize(pred), F.normalize(self.weight))
+        cosine_of_target_classes = cosine[mask == 1] # (None, )
+
+        eps = 1e-6  # theta in the paper
+        angles = torch.acos(torch.clamp(cosine_of_target_classes, -1 + eps, 1 - eps))
+        modified_cosine_of_target_classes = torch.cos(angles + self.margin)
+        diff = (modified_cosine_of_target_classes - cosine_of_target_classes).unsqueeze(1) # (None,1)
+        logits = cosine + (mask * diff) # (None, n_classes)
+        logits = logits * self.scale
+        loss = torch.nn.CrossEntropyLoss()(logits, gt)
+
+        if self.return_valid:
+            return loss, pred, gt
+        else:
+            return loss
+
 
 @LOSS.register_module()
 class SmoothCrossEntropy(torch.nn.Module):

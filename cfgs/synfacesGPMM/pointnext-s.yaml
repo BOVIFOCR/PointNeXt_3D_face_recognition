@@ -34,7 +34,7 @@ model:
       norm: 'bn'
   cls_args: 
     NAME: ClsHead
-    num_classes: 1000
+    num_classes: 100
     mlps: [512, 256]
     norm_args: 
       norm: 'bn1d'
