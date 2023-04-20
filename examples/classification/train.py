@@ -296,7 +296,28 @@ def validate(model, val_loader, cfg):
             data[key] = data[key].cuda(non_blocking=True)
         target = data['y']
         points = data['x']
-        points = points[:, :npoints]
+        # points = points[:, :npoints]
+
+        # Copied from 'train_one_epoch()' method
+        num_curr_pts = points.shape[1]
+        if num_curr_pts > npoints:  # point resampling strategy
+            if npoints == 1024:
+                point_all = 1200
+            elif npoints == 4096:
+                point_all = 4800
+            elif npoints == 8192:
+                point_all = 8192
+            else:
+                raise NotImplementedError()
+            if  points.size(1) < point_all:
+                point_all = points.size(1)
+            fps_idx = furthest_point_sample(
+                points[:, :, :3].contiguous(), point_all)
+            fps_idx = fps_idx[:, np.random.choice(
+                point_all, npoints, False)]
+            points = torch.gather(
+                points, 1, fps_idx.unsqueeze(-1).long().expand(-1, -1, points.shape[-1]))
+
         data['pos'] = points[:, :, :3].contiguous()
         data['x'] = points[:, :, :cfg.model.in_channels].transpose(1, 2).contiguous()
         logits = model(data)
