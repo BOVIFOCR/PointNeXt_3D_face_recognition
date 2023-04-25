@@ -36,7 +36,7 @@ model:
   cls_args: 
     # NAME: ClsHead
     NAME: ClsHeadArcface
-    num_classes: 100
+    num_classes: 1000
     mlps: [512, 256]
     norm_args: 
       norm: 'bn1d'

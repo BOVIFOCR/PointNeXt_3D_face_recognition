@@ -74,7 +74,8 @@ class TreeMS1MV2_3DReconstructedMICA:
         samples_per_subject = []
         indexes_samples = []
         for i, pc_path in enumerate(sorted(pc_paths_list)):
-            print('%d/%d - %s' % (i, len(pc_paths_list), pc_path), end='\r')
+            # print('%d/%d - %s' % (i, len(pc_paths_list), pc_path), end='\r')
+            print('%d/%d - \'%s\'' % (i, len(pc_paths_list), pc_path), end='\r')
             data_path = pc_path.split('/')
             if pc_ext in data_path[-1]:
                 subject_name = data_path[-(dir_level+1)]
@@ -103,7 +104,8 @@ class TreeMS1MV2_3DReconstructedMICA:
         filtered_samples_per_subject = []
         selected_samples_per_subject = [0] * len(unique_subjects_names)
         for i, pc_path, pc_subj in zip(range(len(all_pc_paths)), all_pc_paths, all_pc_subjects):
-            print('%d/%d - %s' % (i+1, len(all_pc_paths), pc_path), end='\r')
+            # print('%d/%d - %s' % (i+1, len(all_pc_paths), pc_path), end='\r')
+            print('%d/%d - \'%s\'' % (i+1, len(all_pc_paths), pc_path), end='\r')
             if samples_per_subject[unique_subjects_names.index(pc_subj)] >= min_samples and \
                (max_samples==-1 or selected_samples_per_subject[unique_subjects_names.index(pc_subj)] < max_samples):
                 filtered_pc_paths.append(pc_path)

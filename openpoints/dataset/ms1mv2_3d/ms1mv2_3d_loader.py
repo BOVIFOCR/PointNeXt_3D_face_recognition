@@ -42,12 +42,12 @@ class MS1MV2_3D(Dataset):
         self.transform = transform
 
         # 22 CLASSES (TOY EXAMPLE)
-        DATA_PATH = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_reduced'
-        n_classes = 22
+        # DATA_PATH = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_reduced'
+        # n_classes = 22
 
         # 1000 CLASSES
-        # DATA_PATH = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_1000subj'
-        # n_classes = 1000
+        DATA_PATH = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_1000subj'
+        n_classes = 1000
 
         # 2000 CLASSES
         # DATA_PATH = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_2000subj'
