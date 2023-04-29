@@ -40,6 +40,11 @@ class BaseClsArcface(nn.Module):
         logits = self.forward(data)
         return logits, self.criterion(logits, gt.long())
 
+    def get_face_embedding(self, data):
+        global_feat = self.encoder.forward_cls_feat(data)
+        return global_feat                      # last layer embedding (512)
+        # return self.prediction(global_feat)   # class logit
+
 
 @MODELS.register_module()
 class DistillClsArcface(BaseClsArcface):
@@ -132,6 +137,9 @@ class ClsHeadArcface(nn.Module):
 
 
     def forward(self, end_points):
+        
+        '''
+        # NOT NECESSARY IN ARCFACE LOSS (Bernardo)
         if self.global_feat is not None:
             global_feats = []
             for preprocess in self.global_feat:
@@ -141,7 +149,9 @@ class ClsHeadArcface(nn.Module):
                     global_feats.append(torch.mean(end_points, dim=self.point_dim, keepdim=False))
             end_points = torch.cat(global_feats, dim=1)
         logits = self.head(end_points)
+        '''
 
         # Bernardo
-        logits = F.linear(F.normalize(logits), F.normalize(self.weight))
+        # logits = F.linear(F.normalize(logits), F.normalize(self.weight))
+        logits = F.linear(F.normalize(end_points), F.normalize(self.weight))
         return logits
