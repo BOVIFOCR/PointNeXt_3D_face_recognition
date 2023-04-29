@@ -121,12 +121,14 @@ class ClsHeadArcface(nn.Module):
                                             act_args=act_args))
             if dropout:
                 heads.append(nn.Dropout(dropout))
-        heads.append(create_linearblock(mlps[-2], mlps[-1], act_args=None))
+        # heads.append(create_linearblock(mlps[-2], mlps[-1], act_args=None))  # original (last classification layer: 256 x num_classes)
+        heads.append(create_linearblock(mlps[-3], mlps[-2], act_args=None))    # Bernardo (adapted to add arcface loss: 512 x 512)
         self.head = nn.Sequential(*heads)
 
         # Bernardo
-        self.weight = nn.Parameter(torch.Tensor(num_classes, num_classes))
-        nn.init.xavier_uniform_(self.weight)
+        self.weight = nn.Parameter(torch.Tensor(num_classes, mlps[-2]))
+        # nn.init.xavier_uniform_(self.weight)
+        nn.init.normal_(self.weight, mean=0.0, std=0.01)    # same used in insightface: https://github.com/deepinsight/insightface/blob/0ab621fb2f2fa2f538f875896fa848553fd1d647/recognition/arcface_torch/partial_fc_v2.py#L71
 
 
     def forward(self, end_points):
