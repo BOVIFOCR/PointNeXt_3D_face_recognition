@@ -12,6 +12,17 @@ from openpoints.models.layers import furthest_point_sample, fps
 from openpoints.utils import set_random_seed, save_checkpoint, load_checkpoint, resume_checkpoint, setup_logger_dist, cal_model_parm_nums, Wandb
 from openpoints.utils import EasyConfig
 
+from dataloaders.lfw_pairs_3Dreconstructed_MICA import LFW_Pairs_3DReconstructedMICA
+
+
+
+LFW_POINT_CLOUDS = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/lfw'
+LFW_VERIF_PAIRS_LIST = '/datasets1/bjgbiesseck/lfw/pairs.txt'
+# LFW_VERIF_PAIRS_LIST = '/datasets1/bjgbiesseck/lfw/pairsDevTest.txt'
+
+MLFW_POINT_CLOUDS = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MLFW'
+# MLFW_VERIF_PAIRS_LIST = '/datasets1/bjgbiesseck/MLFW/pairs.txt'
+
 
 def parse_args():
     parser = argparse.ArgumentParser('run_verification_test.py')
@@ -47,28 +58,43 @@ def load_trained_weights_from_cfg_file(cfg_path='log/ms1mv2_3d_arcface/ms1mv2_3d
     return model, best_epoch, metrics
 
 
-if __name__ == "__main__":
-    # Initialization
-    args, opts = parse_args()
-    cfg = EasyConfig()
-    cfg.load(args.cfg, recursive=True)
-    cfg.update(opts)
-    if not hasattr(cfg, 'seed'):
-        cfg.seed = np.random.randint(1, 10000)
-
-    # Build model
-    print('Building model...')
-    model = build_model_from_cfg(cfg.model).to(0)
-
-    # Load trained weights
-    model, best_epoch, metrics = load_trained_weights_from_cfg_file(args.cfg)
-    model.eval()
-    
-    # Load one point cloud (test)
-    path_point_cloud = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_reduced/m.0ql2bgg/0-FaceId-0/mesh_centralized-nosetip_with-normals_filter-radius=100.npy'
-    points = np.load(path_point_cloud).astype(np.float32)
+def load_one_point_cloud(file_path):
+    if file_path.endswith('.npy'):
+        points = np.load(file_path).astype(np.float32)
     points[:, :3] = pc_normalize(points[:, :3])
-        
+    return points
+
+
+def load_point_clouds(pairs_paths):
+    dataset = [None] * len(pairs_paths)
+    for i, pair in enumerate(pairs_paths):
+        label, path0, path1 = pair
+        # print(f'pair: {i}/{len(pairs_paths)-1}', end='\r')
+        print(f'pair: {i}/{len(pairs_paths)-1}')
+        print('label:', label)
+        print('path0:', path0)
+        print('path1:', path1)
+        pc0 = np.load(path0)
+        pc1 = np.load(path1)
+        dataset[i] = (label, pc0, pc1)
+        print('------------')
+    print()
+
+
+def load_dataset(dataset_name='lfw'):
+    if dataset_name.upper() == 'LFW':
+        file_ext = '*_centralized-nosetip_with-normals_filter-radius=100.npy'
+        all_pairs_paths_label, pos_pair_label, neg_pair_label = LFW_Pairs_3DReconstructedMICA().load_pointclouds_pairs_with_labels(LFW_POINT_CLOUDS, LFW_VERIF_PAIRS_LIST, file_ext)
+        # print('\nLFW_Pairs_3DReconstructedMICA - load_pointclouds_pairs_with_labels')
+        # print('all_pairs_paths_label:', all_pairs_paths_label)
+        # print('len(all_pairs_paths_label):', len(all_pairs_paths_label))
+        # print('pos_pair_label:', pos_pair_label)
+        # print('neg_pair_label:', neg_pair_label)
+        print('Loading dataset:', dataset_name)
+        pointsclouds_pairs = load_point_clouds(all_pairs_paths_label)
+
+
+def organize_and_subsample_data(points):
     points = torch.from_numpy(points).float().to(0)
     points = torch.unsqueeze(points, dim = 0)
     # print('points:', points)
@@ -96,6 +122,35 @@ if __name__ == "__main__":
     data = {}
     data['pos'] = points[:, :, :3].contiguous()
     data['x'] = points[:, :, :3].transpose(1, 2).contiguous()
+    return data
+
+
+if __name__ == "__main__":
+    # Initialization
+    args, opts = parse_args()
+    cfg = EasyConfig()
+    cfg.load(args.cfg, recursive=True)
+    cfg.update(opts)
+    if not hasattr(cfg, 'seed'):
+        cfg.seed = np.random.randint(1, 10000)
+
+    # Build model
+    print('Building model...')
+    model = build_model_from_cfg(cfg.model).to(0)
+
+    # Load trained weights
+    model, best_epoch, metrics = load_trained_weights_from_cfg_file(args.cfg)
+    model.eval()
+
+    # # Load one point cloud (test)
+    # path_point_cloud = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_reduced/m.0ql2bgg/0-FaceId-0/mesh_centralized-nosetip_with-normals_filter-radius=100.npy'
+    # points = load_one_point_cloud(path_point_cloud)
+
+    # Load test dataset
+    points, labels = load_dataset(dataset_name=args.dataset)
+    sys.exit(0)
+
+    data = organize_and_subsample_data(points)
 
     with torch.no_grad():
         # logits = model(data)
