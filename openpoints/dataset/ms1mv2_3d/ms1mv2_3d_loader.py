@@ -31,14 +31,11 @@ class MS1MV2_3D(Dataset):
                  split='train',
                  transform=None
                  ):
-        for i in range(20):
-            print("Initializing SystheticFaces Net")
-
 
         self.partition = 'train' if split.lower() == 'train' else 'val'  # val = test
         # Load paths
         #self.data, self.label = load_data(data_dir, self.partition, self.url)
-        #self.num_points = num_points
+        self.num_points = num_points
         self.transform = transform
 
         # 22 CLASSES (TOY EXAMPLE)
@@ -61,9 +58,8 @@ class MS1MV2_3D(Dataset):
         # DATA_PATH = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_10000subj'
         # n_classes = 10000
 
-        self.num_points = 2900
         dir_level=2
-        min_samples=2
+        min_samples=3
         max_samples=-1
         file_ext = 'mesh_centralized-nosetip_with-normals_filter-radius=100.npy'
         # file_ext = '.ply'
@@ -72,7 +68,7 @@ class MS1MV2_3D(Dataset):
 
         subjects_with_pc_paths, unique_subjects_names, samples_per_subject = TreeMS1MV2_3DReconstructedMICA().load_filter_organize_pointclouds_paths(DATA_PATH, dir_level, file_ext, min_samples, max_samples)
         assert len(unique_subjects_names) == len(samples_per_subject)
-        
+
         self.cat = unique_subjects_names    # Bernardo
         self.classes = dict(zip(self.cat, range(len(self.cat))))
 
@@ -93,7 +89,7 @@ class MS1MV2_3D(Dataset):
                             break
                 assert len(train_subj_with_paths) == amount_train_samples_subj
                 self.data += train_subj_with_paths
-                                
+
         elif split=='test':
             last_index = 0
             for samp_per_subj, uniq_subj_name in zip(samples_per_subject, unique_subjects_names):
@@ -108,16 +104,8 @@ class MS1MV2_3D(Dataset):
                             break
                 assert len(test_subj_with_paths) == amount_test_samples_subj
                 self.data += test_subj_with_paths
-        
-        # # BERNARDO'S TEST
-        # print('\nBERNARDO - openpoints/dataset/ms1mv2_3d/ms1mv2_3d_loader.py - MS1MV2_3D - __init__')
-        # print('subjects_with_pc_paths:', subjects_with_pc_paths)
-        # print('unique_subjects_names:', unique_subjects_names)
-        # print('samples_per_subject:', samples_per_subject)
-        # print()
-        # import sys
-        # sys.exit(0)
-        
+
+
     def __getitem__(self, item):
         pointcloud, cls = self._get_item(item)
         pointcloud = pointcloud[:self.num_points]
@@ -147,9 +135,9 @@ class MS1MV2_3D(Dataset):
     @property
     def num_classes(self):
         return np.max(self.label) + 1
-    
-    
-    
+
+
+
     def _get_item(self, index): 
         fn = self.data[index]
         cls = self.classes[self.data[index][0]]
@@ -169,10 +157,6 @@ class MS1MV2_3D(Dataset):
         if point_set.shape[1] == 7:        # if contains curvature
             point_set = point_set[:,:-1]   # remove curvature column
 
-        # Take the first npoints
-        point_set = point_set[0:self.num_points,:]
-        
-       
         point_set[:,0:3] = self.pc_normalize(point_set[:,0:3])
         '''
         if not self.normal_channel:

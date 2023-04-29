@@ -240,6 +240,7 @@ def train_one_epoch(model, train_loader, optimizer, scheduler, epoch, cfg):
         from openpoints.dataset import vis_points
         vis_points(data['pos'].cpu().numpy()[0])
         """
+
         num_curr_pts = points.shape[1]
         if num_curr_pts > npoints:  # point resampling strategy
             if npoints == 1024:
@@ -249,7 +250,8 @@ def train_one_epoch(model, train_loader, optimizer, scheduler, epoch, cfg):
             elif npoints == 8192:
                 point_all = 8192
             else:
-                raise NotImplementedError()
+                # raise NotImplementedError()  # original
+                point_all = npoints            # Bernardo
             if  points.size(1) < point_all:
                 point_all = points.size(1)
             fps_idx = furthest_point_sample(
@@ -308,7 +310,8 @@ def validate(model, val_loader, cfg):
             elif npoints == 8192:
                 point_all = 8192
             else:
-                raise NotImplementedError()
+                # raise NotImplementedError()  # original
+                point_all = npoints            # Bernardo
             if  points.size(1) < point_all:
                 point_all = points.size(1)
             fps_idx = furthest_point_sample(

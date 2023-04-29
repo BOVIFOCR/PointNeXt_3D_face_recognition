@@ -14,7 +14,7 @@ model:
     blocks: [1, 1, 1, 1, 1, 1]
     strides: [1, 2, 2, 2, 2, 1]
     width: 32
-    in_channels: 3 
+    in_channels: 3
     radius: 0.15
     radius_scaling: 1.5
     sa_layers: 2
@@ -37,7 +37,8 @@ model:
     # NAME: ClsHead
     NAME: ClsHeadArcface
     num_classes: 1000
-    mlps: [512, 256]
+    # mlps: [512, 256]
+    mlps: [512, 512]
     norm_args: 
       norm: 'bn1d'
 
