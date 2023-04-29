@@ -2,7 +2,7 @@ import __init__
 import argparse, yaml
 from torch import multiprocessing as mp
 
-import os, logging, csv, numpy as np, wandb
+import sys, os, glob, logging, csv, numpy as np, wandb
 from tqdm import tqdm
 import torch, torch.nn as nn
 from torch import distributed as dist
@@ -34,6 +34,19 @@ def pc_normalize(pc):
     return pc
 
 
+def load_trained_weights_from_cfg_file(cfg_path='log/ms1mv2_3d_arcface/ms1mv2_3d_arcface-train-pointnext-s_arcface-ngpus1-seed6520-20230429-170750-98s4kHjBdbgbRWcegn9V9y/pointnext-s_arcface.yaml'):
+    # pretrained_path = 'log/ms1mv2_3d_arcface/ms1mv2_3d_arcface-train-pointnext-s_arcface-ngpus1-seed6520-20230429-170750-98s4kHjBdbgbRWcegn9V9y/checkpoint/ms1mv2_3d_arcface-train-pointnext-s_arcface-ngpus1-seed6520-20230429-170750-98s4kHjBdbgbRWcegn9V9y_ckpt_best.pth'
+    file_name = '*_ckpt_best.pth'
+    # file_name = '*_ckpt_latest.pth'
+    pretrained_path = '/'.join(cfg_path.split('/')[:-1]) + '/checkpoint/' + file_name
+    full_pretrained_path = glob.glob(pretrained_path)
+    if len(full_pretrained_path) > 0:
+        full_pretrained_path = full_pretrained_path[0]
+    print('Loading trained weights:', full_pretrained_path)
+    best_epoch, metrics = load_checkpoint(model, full_pretrained_path)
+    return model, best_epoch, metrics
+
+
 if __name__ == "__main__":
     # Initialization
     args, opts = parse_args()
@@ -43,15 +56,14 @@ if __name__ == "__main__":
     if not hasattr(cfg, 'seed'):
         cfg.seed = np.random.randint(1, 10000)
 
-
-    # Load trained model
+    # Build model
+    print('Building model...')
     model = build_model_from_cfg(cfg.model).to(0)
-    pretrained_path = '/home/bjgbiesseck/GitHub/BOVIFOCR_PointNeXt_3D_face_recognition/log/ms1mv2_3d_arcface/ms1mv2_3d_arcface-train-pointnext-s_arcface-ngpus1-seed3593-20230426-210129-8WXM5oRqoyeEM4EX2v2m6R/checkpoint/ms1mv2_3d_arcface-train-pointnext-s_arcface-ngpus1-seed3593-20230426-210129-8WXM5oRqoyeEM4EX2v2m6R_ckpt_best.pth'
-    print('Loading pretrained model...')
-    best_epoch, metrics = load_checkpoint(model, pretrained_path)
+
+    # Load trained weights
+    model, best_epoch, metrics = load_trained_weights_from_cfg_file(args.cfg)
     model.eval()
-
-
+    
     # Load one point cloud (test)
     path_point_cloud = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_reduced/m.0ql2bgg/0-FaceId-0/mesh_centralized-nosetip_with-normals_filter-radius=100.npy'
     points = np.load(path_point_cloud).astype(np.float32)
@@ -73,7 +85,8 @@ if __name__ == "__main__":
         elif npoints == 8192:
             point_all = 8192
         else:
-            raise NotImplementedError()
+            # raise NotImplementedError()  # original
+            point_all = npoints            # Bernardo
         if  points.size(1) < point_all:
             point_all = points.size(1)
         fps_idx = furthest_point_sample(points[:, :, :3].contiguous(), point_all)
@@ -85,6 +98,7 @@ if __name__ == "__main__":
     data['x'] = points[:, :, :3].transpose(1, 2).contiguous()
 
     with torch.no_grad():
-        logits = model(data)
-        print('logits:', logits)
+        # logits = model(data)
+        logits = model.get_face_embedding(data)
+        # print('logits:', logits)
         print('logits.size():', logits.size())
