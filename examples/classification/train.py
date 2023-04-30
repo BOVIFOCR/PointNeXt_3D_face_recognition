@@ -188,7 +188,8 @@ def main(gpu, cfg, profile=False):
                      f'train_oa {train_oa:.2f}, val_oa {val_oa:.2f}, best val oa {best_val:.2f}')
         if writer is not None:
             writer.add_scalar('train_loss', train_loss, epoch)
-            writer.add_scalar('train_oa', train_macc, epoch)
+            writer.add_scalar('train_macc', train_macc, epoch)
+            writer.add_scalar('train_oa', train_oa, epoch)
             writer.add_scalar('lr', lr, epoch)
             writer.add_scalar('val_oa', val_oa, epoch)
             writer.add_scalar('mAcc_when_best', macc_when_best, epoch)
