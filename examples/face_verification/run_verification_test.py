@@ -65,25 +65,27 @@ def load_one_point_cloud(file_path):
     return points
 
 
-def load_point_clouds(pairs_paths):
-    dataset = [None] * len(pairs_paths)
+def load_point_clouds_from_disk(pairs_paths):
+    data = [None] * len(pairs_paths)
     for i, pair in enumerate(pairs_paths):
-        label, path0, path1 = pair
+        pair_label, path0, path1 = pair
         # print(f'pair: {i}/{len(pairs_paths)-1}', end='\r')
         print(f'pair: {i}/{len(pairs_paths)-1}')
-        print('label:', label)
+        print('pair_label:', pair_label)
         print('path0:', path0)
         print('path1:', path1)
         pc0 = np.load(path0)
         pc1 = np.load(path1)
-        dataset[i] = (label, pc0, pc1)
+        # data[i] = (label, pc0, pc1)
+        data[i] = (pc0, pc1, pair_label)
         print('------------')
     print()
+    return data
 
 
 def load_dataset(dataset_name='lfw'):
     if dataset_name.upper() == 'LFW':
-        file_ext = '*_centralized-nosetip_with-normals_filter-radius=100.npy'
+        file_ext = 'mesh_centralized-nosetip_with-normals_filter-radius=100.npy'
         all_pairs_paths_label, pos_pair_label, neg_pair_label = LFW_Pairs_3DReconstructedMICA().load_pointclouds_pairs_with_labels(LFW_POINT_CLOUDS, LFW_VERIF_PAIRS_LIST, file_ext)
         # print('\nLFW_Pairs_3DReconstructedMICA - load_pointclouds_pairs_with_labels')
         # print('all_pairs_paths_label:', all_pairs_paths_label)
@@ -91,10 +93,12 @@ def load_dataset(dataset_name='lfw'):
         # print('pos_pair_label:', pos_pair_label)
         # print('neg_pair_label:', neg_pair_label)
         print('Loading dataset:', dataset_name)
-        pointsclouds_pairs = load_point_clouds(all_pairs_paths_label)
+    
+    data = load_point_clouds_from_disk(all_pairs_paths_label)
+    return data
 
 
-def organize_and_subsample_data(points):
+def subsample_point_cloud(points, npoints=1024):
     points = torch.from_numpy(points).float().to(0)
     points = torch.unsqueeze(points, dim = 0)
     # print('points:', points)
@@ -102,7 +106,7 @@ def organize_and_subsample_data(points):
 
     # Copied from 'train_one_epoch()' method
     num_curr_pts = points.shape[1]
-    npoints = args.num_points
+    # npoints = args.num_points
     if num_curr_pts > npoints:  # point resampling strategy
         if npoints == 1024:
             point_all = 1200
@@ -119,10 +123,33 @@ def organize_and_subsample_data(points):
         # fps_idx = fps_idx[:, np.random.choice(point_all, npoints, False)]
         points = torch.gather(points, 1, fps_idx.unsqueeze(-1).long().expand(-1, -1, points.shape[-1]))
 
-    data = {}
-    data['pos'] = points[:, :, :3].contiguous()
-    data['x'] = points[:, :, :3].transpose(1, 2).contiguous()
-    return data
+    return points
+
+    # data = {}
+    # data['pos'] = points[:, :, :3].contiguous()
+    # data['x'] = points[:, :, :3].transpose(1, 2).contiguous()
+    # return data
+
+
+def organize_and_subsample_pointcloud(data, npoints=1024):
+    chanels = 3
+    cache = {}
+    # cache['pos'] = torch.zeros(len(data), chanels, npoints)
+    cache['x'] = torch.zeros(size=(2*len(data), npoints, chanels), device=0)
+    for i, pair in enumerate(data):
+        pc0, pc1, pair_label = pair
+        pc0_orig_shape, pc1_orig_shape = pc0.shape, pc1.shape
+        pc0 = subsample_point_cloud(pc0[:, :3], npoints)
+        pc1 = subsample_point_cloud(pc1[:, :3], npoints)
+        j = i * 2
+        cache['x'][j]   = pc0
+        cache['x'][j+1] = pc1
+        print(f'Pair {i}/{len(data)-1} - subsampling  pc0: {pc0_orig_shape} ->', pc0.size(), f',  pc1: {pc1_orig_shape} ->', pc1.size())
+    # print('cache[\'x\'].size():', cache['x'].size())
+    
+    cache['pos'] = cache['x'].contiguous()
+    cache['x'] = cache['x'].transpose(1, 2).contiguous()
+    return cache
 
 
 if __name__ == "__main__":
@@ -147,13 +174,24 @@ if __name__ == "__main__":
     # points = load_one_point_cloud(path_point_cloud)
 
     # Load test dataset
-    points, labels = load_dataset(dataset_name=args.dataset)
-    sys.exit(0)
-
-    data = organize_and_subsample_data(points)
+    data = load_dataset(dataset_name=args.dataset)
+    
+    cache = organize_and_subsample_pointcloud(data, npoints=args.num_points)
+    print('cache[\'x\'].size():', cache['x'].size())
 
     with torch.no_grad():
-        # logits = model(data)
-        logits = model.get_face_embedding(data)
-        # print('logits:', logits)
-        print('logits.size():', logits.size())
+        batch_size = 256
+        num_batches = len(cache['x']) // batch_size
+        last_batch_size = len(cache['x']) % batch_size
+        if last_batch_size > 0: num_batches += 1
+        for i in range(0, num_batches):
+            j = i*batch_size
+            num_samples = batch_size
+            if j + batch_size > len(cache['x']): num_samples = last_batch_size
+
+            data = {}
+            data['pos'] = cache['pos'][j:j+num_samples]
+            data['x']   = cache['x'][j:j+num_samples]
+            embedd = model.get_face_embedding(data)
+            # print('embedd:', embedd)
+            print(f'batch {i}/{num_batches-1} - j: {j}:{j+num_samples} - embedd.size():', embedd.size())
