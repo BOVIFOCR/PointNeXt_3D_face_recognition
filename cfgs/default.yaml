@@ -68,3 +68,5 @@ datatransforms:
   train: null
   val: null
 feature_keys: pos
+
+save_faces_path: '/home/pbqv20/PointNeXt_3D_face_recognition/faces_data'
