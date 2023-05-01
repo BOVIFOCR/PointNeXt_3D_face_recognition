@@ -5,7 +5,7 @@ from torch import distributed as dist
 from torch.utils.tensorboard import SummaryWriter
 from openpoints.utils import set_random_seed, save_checkpoint, load_checkpoint, resume_checkpoint, setup_logger_dist, \
     cal_model_parm_nums, Wandb
-from openpoints.utils import AverageMeter, ConfusionMatrix, get_mious
+from openpoints.utils import AverageMeter, ConfusionMatrix, get_mious, save_batch_faces
 from openpoints.dataset import build_dataloader_from_cfg
 from openpoints.transforms import build_transforms_from_cfg
 from openpoints.optim import build_optimizer_from_cfg
@@ -317,6 +317,10 @@ def validate(model, val_loader, cfg):
                 point_all, npoints, False)]
             points = torch.gather(
                 points, 1, fps_idx.unsqueeze(-1).long().expand(-1, -1, points.shape[-1]))
+
+        if idx == 0:
+            your_path = cfg.save_faces_path
+            save_batch_faces(data,your_path)
 
         data['pos'] = points[:, :, :3].contiguous()
         data['x'] = points[:, :, :cfg.model.in_channels].transpose(1, 2).contiguous()

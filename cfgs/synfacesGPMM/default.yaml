@@ -65,3 +65,5 @@ wandb:
   project: PointNeXt-SyntheticFacesGPMM
 
 seed: null
+
+save_faces_path: '/home/pbqv20/PointNeXt_3D_face_recognition/data'  # number of poins actually used in training and evaluation
