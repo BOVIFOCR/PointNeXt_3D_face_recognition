@@ -47,6 +47,24 @@ def print_cls_results(oa, macc, accs, epoch, cfg):
     logging.info(s)
 
 
+def subsample_pointcloud(points, npoints=1024):
+    if npoints == 1024:
+        point_all = 1200
+    elif npoints == 4096:
+        point_all = 4800
+    elif npoints == 8192:
+        point_all = 8192
+    else:
+        # raise NotImplementedError()  # original
+        point_all = npoints            # Bernardo
+    if points.size(1) < point_all:
+        point_all = points.size(1)
+    fps_idx = furthest_point_sample(points[:, :, :3].contiguous(), point_all)
+    fps_idx = fps_idx[:, np.random.choice(point_all, npoints, False)]
+    points = torch.gather(points, 1, fps_idx.unsqueeze(-1).long().expand(-1, -1, points.shape[-1]))
+    return points
+
+
 def main(gpu, cfg, profile=False):
     if cfg.distributed:
         if cfg.mp:
@@ -71,7 +89,7 @@ def main(gpu, cfg, profile=False):
         cfg.model.criterion_args = cfg.criterion_args
     model = build_model_from_cfg(cfg.model).to(cfg.rank)
     model_size = cal_model_parm_nums(model)
-    logging.info(model)
+    # logging.info(model)
     logging.info('Number of params: %.4f M' % (model_size / 1e6))
     # criterion = build_criterion_from_cfg(cfg.criterion_args).cuda()
     if cfg.model.get('in_channels', None) is None:
@@ -244,23 +262,7 @@ def train_one_epoch(model, train_loader, optimizer, scheduler, epoch, cfg):
 
         num_curr_pts = points.shape[1]
         if num_curr_pts > npoints:  # point resampling strategy
-            if npoints == 1024:
-                point_all = 1200
-            elif npoints == 4096:
-                point_all = 4800
-            elif npoints == 8192:
-                point_all = 8192
-            else:
-                # raise NotImplementedError()  # original
-                point_all = npoints            # Bernardo
-            if  points.size(1) < point_all:
-                point_all = points.size(1)
-            fps_idx = furthest_point_sample(
-                points[:, :, :3].contiguous(), point_all)
-            fps_idx = fps_idx[:, np.random.choice(
-                point_all, npoints, False)]
-            points = torch.gather(
-                points, 1, fps_idx.unsqueeze(-1).long().expand(-1, -1, points.shape[-1]))
+            points = subsample_pointcloud(points, npoints)
 
         data['pos'] = points[:, :, :3].contiguous()
         data['x'] = points[:, :, :cfg.model.in_channels].transpose(1, 2).contiguous()
@@ -314,23 +316,7 @@ def validate(model, val_loader, cfg):
         # Copied from 'train_one_epoch()' method
         num_curr_pts = points.shape[1]
         if num_curr_pts > npoints:  # point resampling strategy
-            if npoints == 1024:
-                point_all = 1200
-            elif npoints == 4096:
-                point_all = 4800
-            elif npoints == 8192:
-                point_all = 8192
-            else:
-                # raise NotImplementedError()  # original
-                point_all = npoints            # Bernardo
-            if  points.size(1) < point_all:
-                point_all = points.size(1)
-            fps_idx = furthest_point_sample(
-                points[:, :, :3].contiguous(), point_all)
-            fps_idx = fps_idx[:, np.random.choice(
-                point_all, npoints, False)]
-            points = torch.gather(
-                points, 1, fps_idx.unsqueeze(-1).long().expand(-1, -1, points.shape[-1]))
+            points = subsample_pointcloud(points, npoints)
 
         data['pos'] = points[:, :, :3].contiguous()
         data['x'] = points[:, :, :cfg.model.in_channels].transpose(1, 2).contiguous()

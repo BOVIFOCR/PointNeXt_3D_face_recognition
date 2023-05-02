@@ -1,6 +1,6 @@
 # Dataset Related
-# num_points: 1024  # number of poins actually used in training and evaluation
-num_points: 2048
+num_points: 1024  # number of poins actually used in training and evaluation
+# num_points: 2048
 # num_points: 2900  # Default value for MS1MV2-3D reconstructed by MICA
 dataset:
   common:
@@ -8,13 +8,13 @@ dataset:
     data_dir: '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images'
   train:
     split: train
-    # num_points: 1024  # in training, use sampled 1024 points for data augmentation.
-    num_points: 2048
+    num_points: 1024  # in training, use sampled 1024 points for data augmentation.
+    # num_points: 2048
     # num_points: 2900  # Default value for MS1MV2-3D reconstructed by MICA
   val:
     split: test
-    # num_points: 1024  # in testing, use uniformly pre-sampled 1024 points for evaluation (following https://github.com/lulutang0608/Point-BERT)
-    num_points: 2048
+    num_points: 1024  # in testing, use uniformly pre-sampled 1024 points for evaluation (following https://github.com/lulutang0608/Point-BERT)
+    # num_points: 2048
     # num_points: 2900  # Default value for MS1MV2-3D reconstructed by MICA
 
 feature_keys: pos
