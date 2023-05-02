@@ -5,7 +5,7 @@ from torch import distributed as dist
 from torch.utils.tensorboard import SummaryWriter
 from openpoints.utils import set_random_seed, save_checkpoint, load_checkpoint, resume_checkpoint, setup_logger_dist, \
     cal_model_parm_nums, Wandb
-from openpoints.utils import AverageMeter, ConfusionMatrix, get_mious
+from openpoints.utils import AverageMeter, ConfusionMatrix, get_mious, save_batch_faces
 from openpoints.dataset import build_dataloader_from_cfg
 from openpoints.transforms import build_transforms_from_cfg
 from openpoints.optim import build_optimizer_from_cfg
@@ -195,7 +195,7 @@ def main(gpu, cfg, profile=False):
             writer.add_scalar('mAcc_when_best', macc_when_best, epoch)
             writer.add_scalar('best_val', best_val, epoch)
             writer.add_scalar('epoch', epoch, epoch)
-
+        
         if cfg.sched_on_epoch:
             scheduler.step(epoch)
         if cfg.rank == 0:
@@ -264,9 +264,19 @@ def train_one_epoch(model, train_loader, optimizer, scheduler, epoch, cfg):
 
         data['pos'] = points[:, :, :3].contiguous()
         data['x'] = points[:, :, :cfg.model.in_channels].transpose(1, 2).contiguous()
+        
+        save_faces_path = cfg.save_faces_path
+        if idx == 0:
+            try:
+                save_batch_faces(data,save_faces_path)
+            except:
+                print("save_faces_path not included")
+        
         logits, loss = model.get_logits_loss(data, target) if not hasattr(model, 'module') else model.module.get_logits_loss(data, target)
-        loss.backward()
+        
 
+        loss.backward()
+        
         # optimize
         if num_iter == cfg.step_per_update:
             if cfg.get('grad_norm_clip') is not None and cfg.grad_norm_clip > 0.:
