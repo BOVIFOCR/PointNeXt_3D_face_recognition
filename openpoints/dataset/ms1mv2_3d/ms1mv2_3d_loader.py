@@ -26,7 +26,7 @@ from .tree_ms1mv2_3Dreconstructed_MICA import TreeMS1MV2_3DReconstructedMICA
 class MS1MV2_3D(Dataset):
     
     def __init__(self,
-                 num_points=1024,
+                 num_points=2900,
                  data_dir="",
                  split='train',
                  transform=None
@@ -35,7 +35,7 @@ class MS1MV2_3D(Dataset):
         self.partition = 'train' if split.lower() == 'train' else 'val'  # val = test
         # Load paths
         #self.data, self.label = load_data(data_dir, self.partition, self.url)
-        self.num_points = num_points
+        self.num_points = 2900
         self.transform = transform
 
         # 22 CLASSES (TOY EXAMPLE)

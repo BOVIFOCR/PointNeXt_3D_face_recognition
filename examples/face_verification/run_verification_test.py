@@ -5,6 +5,7 @@ from torch import multiprocessing as mp
 import sys, os, glob, logging, csv, numpy as np, wandb
 from tqdm import tqdm
 import torch, torch.nn as nn
+import torch.nn.functional as F
 from torch import distributed as dist
 from torch.utils.tensorboard import SummaryWriter
 from openpoints.models import build_model_from_cfg
@@ -66,21 +67,22 @@ def load_one_point_cloud(file_path):
 
 
 def load_point_clouds_from_disk(pairs_paths):
-    data = [None] * len(pairs_paths)
+    dataset = [None] * len(pairs_paths)
     for i, pair in enumerate(pairs_paths):
         pair_label, path0, path1 = pair
         # print(f'pair: {i}/{len(pairs_paths)-1}', end='\r')
+        print('loading_point_clouds_from_disk')
         print(f'pair: {i}/{len(pairs_paths)-1}')
         print('pair_label:', pair_label)
         print('path0:', path0)
         print('path1:', path1)
         pc0 = np.load(path0)
         pc1 = np.load(path1)
-        # data[i] = (label, pc0, pc1)
-        data[i] = (pc0, pc1, pair_label)
+        # dataset[i] = (label, pc0, pc1)
+        dataset[i] = (pc0, pc1, pair_label)
         print('------------')
     print()
-    return data
+    return dataset
 
 
 def load_dataset(dataset_name='lfw'):
@@ -94,8 +96,8 @@ def load_dataset(dataset_name='lfw'):
         # print('neg_pair_label:', neg_pair_label)
         print('Loading dataset:', dataset_name)
     
-    data = load_point_clouds_from_disk(all_pairs_paths_label)
-    return data
+    dataset = load_point_clouds_from_disk(all_pairs_paths_label)
+    return dataset
 
 
 def subsample_point_cloud(points, npoints=1024):
@@ -131,12 +133,12 @@ def subsample_point_cloud(points, npoints=1024):
     # return data
 
 
-def organize_and_subsample_pointcloud(data, npoints=1024):
+def organize_and_subsample_pointcloud(dataset, npoints=1024):
     chanels = 3
     cache = {}
-    # cache['pos'] = torch.zeros(len(data), chanels, npoints)
-    cache['x'] = torch.zeros(size=(2*len(data), npoints, chanels), device=0)
-    for i, pair in enumerate(data):
+    # cache['pos'] = torch.zeros(len(dataset), chanels, npoints)
+    cache['x'] = torch.zeros(size=(2*len(dataset), npoints, chanels), device=0)
+    for i, pair in enumerate(dataset):
         pc0, pc1, pair_label = pair
         pc0_orig_shape, pc1_orig_shape = pc0.shape, pc1.shape
         pc0 = subsample_point_cloud(pc0[:, :3], npoints)
@@ -144,12 +146,81 @@ def organize_and_subsample_pointcloud(data, npoints=1024):
         j = i * 2
         cache['x'][j]   = pc0
         cache['x'][j+1] = pc1
-        print(f'Pair {i}/{len(data)-1} - subsampling  pc0: {pc0_orig_shape} ->', pc0.size(), f',  pc1: {pc1_orig_shape} ->', pc1.size())
+        print(f'organize_and_subsample_pointcloud - pair {i}/{len(dataset)-1} - pc0: {pc0_orig_shape} ->', pc0.size(), f',  pc1: {pc1_orig_shape} ->', pc1.size())
     # print('cache[\'x\'].size():', cache['x'].size())
     
     cache['pos'] = cache['x'].contiguous()
     cache['x'] = cache['x'].transpose(1, 2).contiguous()
     return cache
+
+'''
+def compute_face_embeddings(cache, batch_size=128):
+    num_batches = len(cache['x']) // batch_size
+    last_batch_size = len(cache['x']) % batch_size
+    if last_batch_size > 0: num_batches += 1
+    for i in range(0, num_batches):
+        j = i*batch_size
+        num_samples = batch_size
+        if j + batch_size > len(cache['x']): num_samples = last_batch_size
+
+        data = {}
+        data['pos'] = cache['pos'][j:j+num_samples]
+        data['x']   = cache['x'][j:j+num_samples]
+        embedd = model.get_face_embedding(data)
+        # print('embedd:', embedd)
+        print(f'batch {i}/{num_batches-1} - j: {j}:{j+num_samples} - embedd.size():', embedd.size())
+'''
+
+
+def compute_embeddings_distance(face_embedd):
+    assert face_embedd.size()[0] % 2 == 0
+    distances = torch.zeros(int(face_embedd.size()[0]/2))
+    for i in range(0, face_embedd.size()[0], 2):
+        embedd0, embedd1 = face_embedd[i], face_embedd[i+1]
+        distances[int(i/2)] = torch.sum( torch.square( F.normalize(torch.unsqueeze(embedd0, 0)) - F.normalize(torch.unsqueeze(embedd1, 0)) ) )
+    # print('distances:', distances)
+    # print('distances.size():', distances.size())
+    return distances
+
+
+def find_best_treshold(dataset, cos_sims):
+    best_tresh = 0
+    best_acc = 0
+    
+    # start, end, step = 0, 1, 0.01
+    start, end, step = 0, 4, 0.01    # used in insightface code
+
+    treshs = torch.arange(start, end+step, step)
+    for i, tresh in enumerate(treshs):
+        # torch.set_printoptions(precision=3)
+        # tresh = torch.round(tresh, decimals=3)
+        # tresh = round(tresh, 3)
+        tp, fp, tn, fn, acc = 0, 0, 0, 0, 0
+        for j, cos_sim in enumerate(cos_sims):
+            _, _, pair_label = dataset[j]
+            # print('pair_label:', pair_label)
+            if pair_label == '1':  # positive pair
+                if cos_sim < tresh:
+                    tp += 1
+                else:
+                    fn += 1
+            else:  # negative pair
+                if cos_sim >= tresh:
+                    tn += 1
+                else:
+                    fp += 1
+
+        acc = round((tp + tn) / (tp + tn + fp + fn), 4)
+        # print(f'tester_multitask_FACEVERIFICATION - {i}/{treshs.size()[0]-1} - tresh: {tresh} - acc: {acc}')
+
+        if acc > best_acc:
+            best_acc = acc
+            best_tresh = tresh
+
+        print('\x1b[2K', end='')
+        print(f'tester_multitask_FACEVERIFICATION - {i}/{len(treshs)-1} - tresh: {tresh}', end='\r')
+
+    return best_tresh, best_acc
 
 
 if __name__ == "__main__":
@@ -174,24 +245,44 @@ if __name__ == "__main__":
     # points = load_one_point_cloud(path_point_cloud)
 
     # Load test dataset
-    data = load_dataset(dataset_name=args.dataset)
-    
-    cache = organize_and_subsample_pointcloud(data, npoints=args.num_points)
+    dataset = load_dataset(dataset_name=args.dataset)
+
+    cache = organize_and_subsample_pointcloud(dataset, npoints=args.num_points)
     print('cache[\'x\'].size():', cache['x'].size())
 
     with torch.no_grad():
+        distances = torch.zeros(int(len(cache['x'])/2))
         batch_size = 256
         num_batches = len(cache['x']) // batch_size
         last_batch_size = len(cache['x']) % batch_size
         if last_batch_size > 0: num_batches += 1
         for i in range(0, num_batches):
-            j = i*batch_size
+            start_batch_idx = i*batch_size
             num_samples = batch_size
-            if j + batch_size > len(cache['x']): num_samples = last_batch_size
+            if start_batch_idx+batch_size > len(cache['x']): num_samples = last_batch_size
+            end_batch_idx = start_batch_idx+num_samples
 
             data = {}
-            data['pos'] = cache['pos'][j:j+num_samples]
-            data['x']   = cache['x'][j:j+num_samples]
+            data['pos'] = cache['pos'][start_batch_idx:end_batch_idx]
+            data['x']   = cache['x'][start_batch_idx:end_batch_idx]
             embedd = model.get_face_embedding(data)
             # print('embedd:', embedd)
-            print(f'batch {i}/{num_batches-1} - j: {j}:{j+num_samples} - embedd.size():', embedd.size())
+            print(f'computing face embeddings - batch_size: {batch_size} - batch {i}/{num_batches-1} - batch_idxs: {start_batch_idx}:{end_batch_idx} - embedd.size():', embedd.size())
+
+            print('computing distances')
+            dist = compute_embeddings_distance(embedd)
+            print('dist.size():', dist.size())
+            distances[int(start_batch_idx/2):int(end_batch_idx/2)] = dist
+
+            print('---------------')
+
+        # print('distances:', distances)
+        # print('distances.size():', distances.size())
+
+        print('Findind best treshold...')
+        best_tresh, best_acc = find_best_treshold(dataset, distances)
+        print('\nFinal - best_tresh:', best_tresh, '    best_acc:', best_acc)
+
+        print('Finished!')
+        
+        
