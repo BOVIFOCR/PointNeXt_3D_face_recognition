@@ -18,8 +18,8 @@ from dataloaders.lfw_pairs_3Dreconstructed_MICA import LFW_Pairs_3DReconstructed
 
 
 LFW_POINT_CLOUDS = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/lfw'
-LFW_VERIF_PAIRS_LIST = '/datasets1/bjgbiesseck/lfw/pairs.txt'
-# LFW_VERIF_PAIRS_LIST = '/datasets1/bjgbiesseck/lfw/pairsDevTest.txt'
+# LFW_VERIF_PAIRS_LIST = '/datasets1/bjgbiesseck/lfw/pairs.txt'
+LFW_VERIF_PAIRS_LIST = '/datasets1/bjgbiesseck/lfw/pairsDevTest.txt'
 
 MLFW_POINT_CLOUDS = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MLFW'
 # MLFW_VERIF_PAIRS_LIST = '/datasets1/bjgbiesseck/MLFW/pairs.txt'
@@ -252,7 +252,7 @@ if __name__ == "__main__":
 
     with torch.no_grad():
         distances = torch.zeros(int(len(cache['x'])/2))
-        batch_size = 256
+        batch_size = 64
         num_batches = len(cache['x']) // batch_size
         last_batch_size = len(cache['x']) % batch_size
         if last_batch_size > 0: num_batches += 1
