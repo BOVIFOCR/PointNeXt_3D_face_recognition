@@ -153,23 +153,6 @@ def organize_and_subsample_pointcloud(dataset, npoints=1024):
     cache['x'] = cache['x'].transpose(1, 2).contiguous()
     return cache
 
-'''
-def compute_face_embeddings(cache, batch_size=128):
-    num_batches = len(cache['x']) // batch_size
-    last_batch_size = len(cache['x']) % batch_size
-    if last_batch_size > 0: num_batches += 1
-    for i in range(0, num_batches):
-        j = i*batch_size
-        num_samples = batch_size
-        if j + batch_size > len(cache['x']): num_samples = last_batch_size
-
-        data = {}
-        data['pos'] = cache['pos'][j:j+num_samples]
-        data['x']   = cache['x'][j:j+num_samples]
-        embedd = model.get_face_embedding(data)
-        # print('embedd:', embedd)
-        print(f'batch {i}/{num_batches-1} - j: {j}:{j+num_samples} - embedd.size():', embedd.size())
-'''
 
 
 def compute_embeddings_distance(face_embedd):
@@ -223,6 +206,83 @@ def find_best_treshold(dataset, cos_sims):
     return best_tresh, best_acc
 
 
+
+def do_verification_test(model, dataset='LFW', num_points=1200):
+    model.eval()
+
+    # # Load one point cloud (test)
+    # path_point_cloud = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_reduced/m.0ql2bgg/0-FaceId-0/mesh_centralized-nosetip_with-normals_filter-radius=100.npy'
+    # points = load_one_point_cloud(path_point_cloud)
+
+    # Load test dataset
+    dataset = load_dataset(dataset_name=dataset)
+
+    cache = organize_and_subsample_pointcloud(dataset, npoints=num_points)
+    print('cache[\'x\'].size():', cache['x'].size())
+
+    with torch.no_grad():
+        distances = torch.zeros(int(len(cache['x'])/2))
+        batch_size = 64
+        num_batches = len(cache['x']) // batch_size
+        last_batch_size = len(cache['x']) % batch_size
+        if last_batch_size > 0: num_batches += 1
+        for i in range(0, num_batches):
+            start_batch_idx = i*batch_size
+            num_samples = batch_size
+            if start_batch_idx+batch_size > len(cache['x']): num_samples = last_batch_size
+            end_batch_idx = start_batch_idx+num_samples
+
+            data = {}
+            data['pos'] = cache['pos'][start_batch_idx:end_batch_idx]
+            data['x']   = cache['x'][start_batch_idx:end_batch_idx]
+            embedd = model.get_face_embedding(data)
+            # print('embedd:', embedd)
+            print(f'computing face embeddings - batch_size: {batch_size} - batch {i}/{num_batches-1} - batch_idxs: {start_batch_idx}:{end_batch_idx} - embedd.size():', embedd.size())
+
+            print('computing distances')
+            dist = compute_embeddings_distance(embedd)
+            print('dist.size():', dist.size())
+            distances[int(start_batch_idx/2):int(end_batch_idx/2)] = dist
+
+            print('---------------')
+
+        # print('distances:', distances)
+        # print('distances.size():', distances.size())
+
+        print('Findind best treshold...')
+        best_tresh, best_acc = find_best_treshold(dataset, distances)
+        return best_tresh, best_acc
+
+
+
+if __name__ == "__main__":
+    # Initialization
+    args, opts = parse_args()
+    cfg = EasyConfig()
+    cfg.load(args.cfg, recursive=True)
+    cfg.update(opts)
+    if not hasattr(cfg, 'seed'):
+        cfg.seed = np.random.randint(1, 10000)
+
+    # Build model
+    print('Building model...')
+    model = build_model_from_cfg(cfg.model).to(0)
+
+    # Load trained weights
+    model, best_epoch, metrics = load_trained_weights_from_cfg_file(args.cfg)
+    model.eval()
+
+    best_tresh, best_acc = do_verification_test(model, args.dataset, args.num_points)
+    print('\nFinal - best_tresh:', best_tresh, '    best_acc:', best_acc)
+
+    print('Finished!')
+
+
+
+
+
+'''
+# BACKUP (WORKING)
 if __name__ == "__main__":
     # Initialization
     args, opts = parse_args()
@@ -284,5 +344,5 @@ if __name__ == "__main__":
         print('\nFinal - best_tresh:', best_tresh, '    best_acc:', best_acc)
 
         print('Finished!')
-        
+'''
         
