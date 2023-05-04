@@ -81,6 +81,9 @@ class VerificationTester:
             print('path1:', path1)
             pc0 = np.load(path0)
             pc1 = np.load(path1)
+            pc0[:, :3] = self.pc_normalize(pc0[:, :3])
+            pc1[:, :3] = self.pc_normalize(pc1[:, :3])
+
             # dataset[i] = (label, pc0, pc1)
             dataset[i] = (pc0, pc1, pair_label)
             print('------------')
@@ -136,7 +139,7 @@ class VerificationTester:
         # return data
 
 
-    def organize_and_subsample_pointcloud(self, dataset, npoints=1024):
+    def organize_and_subsample_pointcloud(self, dataset, npoints=1200):
         chanels = 3
         cache = {}
         # cache['pos'] = torch.zeros(len(dataset), chanels, npoints)
