@@ -59,7 +59,7 @@ class MS1MV2_3D(Dataset):
         # n_classes = 10000
 
         dir_level=2
-        min_samples=3
+        min_samples=2
         max_samples=-1
         file_ext = 'mesh_centralized-nosetip_with-normals_filter-radius=100.npy'
         # file_ext = '.ply'

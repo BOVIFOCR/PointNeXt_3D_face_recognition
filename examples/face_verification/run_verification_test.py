@@ -13,7 +13,7 @@ from openpoints.models.layers import furthest_point_sample, fps
 from openpoints.utils import set_random_seed, save_checkpoint, load_checkpoint, resume_checkpoint, setup_logger_dist, cal_model_parm_nums, Wandb
 from openpoints.utils import EasyConfig
 
-from dataloaders.lfw_pairs_3Dreconstructed_MICA import LFW_Pairs_3DReconstructedMICA
+from .dataloaders.lfw_pairs_3Dreconstructed_MICA import LFW_Pairs_3DReconstructedMICA
 
 
 
@@ -69,16 +69,19 @@ class VerificationTester:
         return points
 
 
-    def load_point_clouds_from_disk(self, pairs_paths):
+    def load_point_clouds_from_disk(self, pairs_paths, verbose=True):
         dataset = [None] * len(pairs_paths)
         for i, pair in enumerate(pairs_paths):
             pair_label, path0, path1 = pair
-            # print(f'pair: {i}/{len(pairs_paths)-1}', end='\r')
-            print('loading_point_clouds_from_disk')
-            print(f'pair: {i}/{len(pairs_paths)-1}')
-            print('pair_label:', pair_label)
-            print('path0:', path0)
-            print('path1:', path1)
+            
+            if verbose:
+                # print(f'pair: {i}/{len(pairs_paths)-1}', end='\r')
+                print('loading_point_clouds_from_disk')
+                print(f'pair: {i}/{len(pairs_paths)-1}')
+                print('pair_label:', pair_label)
+                print('path0:', path0)
+                print('path1:', path1)
+
             pc0 = np.load(path0)
             pc1 = np.load(path1)
             pc0[:, :3] = self.pc_normalize(pc0[:, :3])
@@ -86,23 +89,28 @@ class VerificationTester:
 
             # dataset[i] = (label, pc0, pc1)
             dataset[i] = (pc0, pc1, pair_label)
-            print('------------')
-        print()
+
+            if verbose:
+                print('------------')
+        if verbose:
+            print()
         return dataset
 
 
-    def load_dataset(self, dataset_name='lfw'):
+    def load_dataset(self, dataset_name='lfw', verbose=True):
         if dataset_name.upper() == 'LFW':
             file_ext = 'mesh_centralized-nosetip_with-normals_filter-radius=100.npy'
             all_pairs_paths_label, pos_pair_label, neg_pair_label = LFW_Pairs_3DReconstructedMICA().load_pointclouds_pairs_with_labels(self.LFW_POINT_CLOUDS, self.LFW_VERIF_PAIRS_LIST, file_ext)
-            # print('\nLFW_Pairs_3DReconstructedMICA - load_pointclouds_pairs_with_labels')
-            # print('all_pairs_paths_label:', all_pairs_paths_label)
-            # print('len(all_pairs_paths_label):', len(all_pairs_paths_label))
-            # print('pos_pair_label:', pos_pair_label)
-            # print('neg_pair_label:', neg_pair_label)
-            print('Loading dataset:', dataset_name)
+            
+            if verbose:
+                # print('\nLFW_Pairs_3DReconstructedMICA - load_pointclouds_pairs_with_labels')
+                # print('all_pairs_paths_label:', all_pairs_paths_label)
+                # print('len(all_pairs_paths_label):', len(all_pairs_paths_label))
+                # print('pos_pair_label:', pos_pair_label)
+                # print('neg_pair_label:', neg_pair_label)
+                print('Loading dataset:', dataset_name)
         
-        dataset = self.load_point_clouds_from_disk(all_pairs_paths_label)
+        dataset = self.load_point_clouds_from_disk(all_pairs_paths_label, verbose=verbose)
         return dataset
 
 
@@ -139,7 +147,7 @@ class VerificationTester:
         # return data
 
 
-    def organize_and_subsample_pointcloud(self, dataset, npoints=1200):
+    def organize_and_subsample_pointcloud(self, dataset, npoints=1200, verbose=True):
         chanels = 3
         cache = {}
         # cache['pos'] = torch.zeros(len(dataset), chanels, npoints)
@@ -152,7 +160,9 @@ class VerificationTester:
             j = i * 2
             cache['x'][j]   = pc0
             cache['x'][j+1] = pc1
-            print(f'organize_and_subsample_pointcloud - pair {i}/{len(dataset)-1} - pc0: {pc0_orig_shape} ->', pc0.size(), f',  pc1: {pc1_orig_shape} ->', pc1.size())
+
+            if verbose:
+                print(f'organize_and_subsample_pointcloud - pair {i}/{len(dataset)-1} - pc0: {pc0_orig_shape} ->', pc0.size(), f',  pc1: {pc1_orig_shape} ->', pc1.size())
         # print('cache[\'x\'].size():', cache['x'].size())
         
         cache['pos'] = cache['x'].contiguous()
@@ -160,18 +170,19 @@ class VerificationTester:
         return cache
 
 
-    def compute_embeddings_distance(self, face_embedd):
+    def compute_embeddings_distance(self, face_embedd, verbose=True):
         assert face_embedd.size()[0] % 2 == 0
         distances = torch.zeros(int(face_embedd.size()[0]/2))
         for i in range(0, face_embedd.size()[0], 2):
             embedd0, embedd1 = face_embedd[i], face_embedd[i+1]
             distances[int(i/2)] = torch.sum( torch.square( F.normalize(torch.unsqueeze(embedd0, 0)) - F.normalize(torch.unsqueeze(embedd1, 0)) ) )
-        # print('distances:', distances)
-        # print('distances.size():', distances.size())
+        # if verbose:
+        #     print('distances:', distances)
+        #     print('distances.size():', distances.size())
         return distances
 
 
-    def find_best_treshold(self, dataset, cos_sims):
+    def find_best_treshold(self, dataset, cos_sims, verbose=True):
         best_tresh = 0
         best_acc = 0
         
@@ -205,13 +216,14 @@ class VerificationTester:
                 best_acc = acc
                 best_tresh = tresh
 
-            print('\x1b[2K', end='')
-            print(f'tester_multitask_FACEVERIFICATION - {i}/{len(treshs)-1} - tresh: {tresh}', end='\r')
+            if verbose:
+                print('\x1b[2K', end='')
+                print(f'tester_multitask_FACEVERIFICATION - {i}/{len(treshs)-1} - tresh: {tresh}', end='\r')
 
         return best_tresh, best_acc
 
 
-    def do_verification_test(self, model, dataset='LFW', num_points=1200):
+    def do_verification_test(self, model, dataset='LFW', num_points=1200, verbose=True):
         model.eval()
 
         # # Load one point cloud (test)
@@ -219,10 +231,11 @@ class VerificationTester:
         # points = load_one_point_cloud(path_point_cloud)
 
         # Load test dataset
-        dataset = self.load_dataset(dataset_name=dataset)
+        dataset = self.load_dataset(dataset_name=dataset, verbose=verbose)
 
-        cache = self.organize_and_subsample_pointcloud(dataset, npoints=num_points)
-        print('cache[\'x\'].size():', cache['x'].size())
+        cache = self.organize_and_subsample_pointcloud(dataset, npoints=num_points, verbose=verbose)
+        if verbose:
+            print('cache[\'x\'].size():', cache['x'].size())
 
         with torch.no_grad():
             distances = torch.zeros(int(len(cache['x'])/2))
@@ -240,21 +253,30 @@ class VerificationTester:
                 data['pos'] = cache['pos'][start_batch_idx:end_batch_idx]
                 data['x']   = cache['x'][start_batch_idx:end_batch_idx]
                 embedd = model.get_face_embedding(data)
-                # print('embedd:', embedd)
-                print(f'computing face embeddings - batch_size: {batch_size} - batch {i}/{num_batches-1} - batch_idxs: {start_batch_idx}:{end_batch_idx} - embedd.size():', embedd.size())
 
-                print('computing distances')
-                dist = self.compute_embeddings_distance(embedd)
-                print('dist.size():', dist.size())
+                if verbose:
+                    # print('embedd:', embedd)
+                    print(f'computing face embeddings - batch_size: {batch_size} - batch {i}/{num_batches-1} - batch_idxs: {start_batch_idx}:{end_batch_idx} - embedd.size():', embedd.size())
+
+                if verbose:
+                    print('computing distances')
+                
+                dist = self.compute_embeddings_distance(embedd, verbose=verbose)
+                
+                if verbose:
+                    print('dist.size():', dist.size())
+                
                 distances[int(start_batch_idx/2):int(end_batch_idx/2)] = dist
 
-                print('---------------')
+                if verbose:
+                    print('---------------')
 
             # print('distances:', distances)
             # print('distances.size():', distances.size())
 
-            print('Findind best treshold...')
-            best_tresh, best_acc = self.find_best_treshold(dataset, distances)
+            if verbose:
+                print('Findind best treshold...')
+            best_tresh, best_acc = self.find_best_treshold(dataset, distances, verbose=verbose)
             return best_tresh, best_acc
 
 
@@ -279,7 +301,7 @@ if __name__ == "__main__":
     model, best_epoch, metrics = verif_tester.load_trained_weights_from_cfg_file(args.cfg)
     model.eval()
 
-    best_tresh, best_acc = verif_tester.do_verification_test(model, args.dataset, args.num_points)
+    best_tresh, best_acc = verif_tester.do_verification_test(model, args.dataset, args.num_points, verbose=True)
     print('\nFinal - best_tresh:', best_tresh, '    best_acc:', best_acc)
 
     print('Finished!')

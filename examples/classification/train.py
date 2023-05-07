@@ -14,6 +14,8 @@ from openpoints.scheduler import build_scheduler_from_cfg
 from openpoints.models import build_model_from_cfg
 from openpoints.models.layers import furthest_point_sample, fps
 
+from examples.face_verification.run_verification_test import VerificationTester
+
 
 def get_features_by_keys(input_features_dim, data):
     if input_features_dim == 3:
@@ -199,7 +201,12 @@ def main(gpu, cfg, profile=False):
                 macc_when_best = val_macc
                 best_epoch = epoch
                 logging.info(f'Find a better ckpt @E{epoch}')
-                print_cls_results(val_oa, val_macc, val_accs, epoch, cfg)
+                # print_cls_results(val_oa, val_macc, val_accs, epoch, cfg)   # commented by Bernardo to avoid overprinting on terminal
+
+            # Bernardo
+            if cfg.val_other_datasets is not None:
+                validate_other_datasets(model, cfg, epoch, writer)
+
 
         lr = optimizer.param_groups[0]['lr']
         logging.info(f'Epoch {epoch} LR {lr:.6f} '
@@ -328,3 +335,15 @@ def validate(model, val_loader, cfg):
         dist.all_reduce(tp), dist.all_reduce(count)
     macc, overallacc, accs = cm.cal_acc(tp, count)
     return macc, overallacc, accs, cm
+
+
+@torch.no_grad()
+def validate_other_datasets(model, cfg, epoch, writer):
+    verificationTester = VerificationTester()
+    for dataset in cfg.val_other_datasets:
+        print(f'Validating on dataset {dataset}...')
+        best_tresh, best_acc = verificationTester.do_verification_test(model, dataset, cfg.num_points, verbose=False)
+        print(f'    {dataset} - best_tresh:', best_tresh, '    best_acc:', best_acc)
+        writer.add_scalar(f'{dataset}_acc', best_acc, epoch)
+        writer.add_scalar(f'{dataset}_treshold', best_acc, epoch)
+    print('\n')
