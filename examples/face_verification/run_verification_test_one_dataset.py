@@ -35,8 +35,8 @@ class VerificationTester:
     
     def __init__(self):
         self.LFW_POINT_CLOUDS = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/lfw'
-        # LFW_VERIF_PAIRS_LIST = '/datasets1/bjgbiesseck/lfw/pairs.txt'
-        self.LFW_VERIF_PAIRS_LIST = '/datasets1/bjgbiesseck/lfw/pairsDevTest.txt'
+        self.LFW_VERIF_PAIRS_LIST = '/datasets1/bjgbiesseck/lfw/pairs.txt'              # whole dataset (6000 face pairs)
+        # self.LFW_VERIF_PAIRS_LIST = '/datasets1/bjgbiesseck/lfw/pairsDevTest.txt'     # only test set (1000 face pairs)
 
         self.MLFW_POINT_CLOUDS = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MLFW'
         # MLFW_VERIF_PAIRS_LIST = '/datasets1/bjgbiesseck/MLFW/pairs.txt'
@@ -236,8 +236,8 @@ class VerificationTester:
         best_acc = 0
         
         # start, end, step = 0, 1, 0.01   # used in insightface code
-        # start, end, step = 0, 4, 0.005
-        start, end, step = 0, 1, 0.005
+        start, end, step = 0, 4, 0.005
+        # start, end, step = 0, 1, 0.005
 
         all_margins_eval = torch.arange(start, end+step, step, dtype=torch.float64)
         all_tp_eval = torch.zeros_like(all_margins_eval, dtype=torch.float64)
@@ -270,10 +270,10 @@ class VerificationTester:
          
         desired_far_idx = torch.where(all_far_eval < next_far)[0][-1]
         tar = all_tar_eval[desired_far_idx]
-        far = all_far_eval[desired_far_idx]
+        far = all_far_eval[desired_far_idx] if all_far_eval[desired_far_idx] > .0 else desired_far
 
-        # return best_tresh, best_acc, tar, far
-        return best_tresh, best_acc, tar, desired_far
+        return best_tresh, best_acc, tar, far
+        # return best_tresh, best_acc, tar, desired_far
 
 
     def do_verification_test(self, model, dataset='LFW', num_points=1200, verbose=True):
@@ -314,8 +314,8 @@ class VerificationTester:
                 if verbose:
                     print('computing distances')
                 
-                # dist = self.compute_embeddings_distance_insightface(embedd, verbose=verbose)
-                dist = self.compute_embeddings_cosine_distance(embedd, verbose=verbose)
+                dist = self.compute_embeddings_distance_insightface(embedd, verbose=verbose)
+                # dist = self.compute_embeddings_cosine_distance(embedd, verbose=verbose)
                 
                 if verbose:
                     print('dist.size():', dist.size())
