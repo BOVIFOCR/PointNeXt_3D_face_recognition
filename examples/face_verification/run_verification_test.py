@@ -173,7 +173,7 @@ class VerificationTester:
         return cache
 
 
-    def compute_embeddings_distance(self, face_embedd, verbose=True):
+    def compute_embeddings_distance_insightface(self, face_embedd, verbose=True):
         assert face_embedd.size()[0] % 2 == 0
         distances = torch.zeros(int(face_embedd.size()[0]/2))
         for i in range(0, face_embedd.size()[0], 2):
@@ -183,47 +183,97 @@ class VerificationTester:
         #     print('distances:', distances)
         #     print('distances.size():', distances.size())
         return distances
+    
+
+    def compute_embeddings_cosine_distance(self, face_embedd, verbose=True):
+        assert face_embedd.size()[0] % 2 == 0
+        distances = torch.zeros(int(face_embedd.size()[0]/2))
+        for i in range(0, face_embedd.size()[0], 2):
+            embedd0, embedd1 = face_embedd[i], face_embedd[i+1]
+            # distances[int(i/2)] = torch.sum( torch.square( F.normalize(torch.unsqueeze(embedd0, 0)) - F.normalize(torch.unsqueeze(embedd1, 0)) ) )
+            distances[int(i/2)] = 1 - torch.dot(embedd0, embedd1)/(torch.linalg.norm(embedd0)*torch.linalg.norm(embedd1))
+        # if verbose:
+        #     print('distances:', distances)
+        #     print('distances.size():', distances.size())
+        return distances
+
+
+    def eval_one_treshold(self, cos_sims, pair_labels, tresh=2.0, verbose=True):
+        tp, fp, tn, fn = 0., 0., 0., 0.
+        for j, (cos_sim, pair_label) in enumerate(zip(cos_sims, pair_labels)):
+            if pair_label == 1:   # positive pair
+                if cos_sim < tresh:
+                    tp += 1
+                else:
+                    fn += 1
+            else:  # negative pair
+                if cos_sim >= tresh:
+                    tn += 1
+                else:
+                    fp += 1
+
+        acc = round((tp + tn) / (tp + tn + fp + fn), 4)
+        tar = float(tp) / (float(tp) + float(fn))
+        far = float(fp) / (float(fp) + float(tn))
+
+        if verbose:
+            print('tresh: %.6f    acc: %.6f    tar: %.6f    far: %.6f' % (tresh, acc, tar, far))
+
+        return tp, fp, tn, fn, acc, tar, far
+
+
+    def get_coeficient_and_exponent(self, desired_far=1e-03):
+        coeficient = desired_far
+        expoent = 0
+        while coeficient < 1:
+            expoent += 1
+            coeficient *= 10
+        return coeficient, expoent
 
 
     def find_best_treshold(self, dataset, cos_sims, verbose=True):
         best_tresh = 0
         best_acc = 0
         
-        # start, end, step = 0, 1, 0.01
-        start, end, step = 0, 4, 0.01    # used in insightface code
+        # start, end, step = 0, 1, 0.01   # used in insightface code
+        # start, end, step = 0, 4, 0.005
+        start, end, step = 0, 1, 0.005
+
+        all_margins_eval = torch.arange(start, end+step, step, dtype=torch.float64)
+        all_tp_eval = torch.zeros_like(all_margins_eval, dtype=torch.float64)
+        all_fp_eval = torch.zeros_like(all_margins_eval, dtype=torch.float64)
+        all_tn_eval = torch.zeros_like(all_margins_eval, dtype=torch.float64)
+        all_fn_eval = torch.zeros_like(all_margins_eval, dtype=torch.float64)
+        all_acc_eval = torch.zeros_like(all_margins_eval, dtype=torch.float64)
+        all_tar_eval = torch.zeros_like(all_margins_eval, dtype=torch.float64)
+        all_far_eval = torch.zeros_like(all_margins_eval, dtype=torch.float64)
+
+        pair_labels = torch.tensor([int(dataset[j][2]) for j in range(len(dataset))], dtype=torch.int8)   # dataset[j] is (pc0, pc1, pair_label)
 
         treshs = torch.arange(start, end+step, step)
         for i, tresh in enumerate(treshs):
-            # torch.set_printoptions(precision=3)
-            # tresh = torch.round(tresh, decimals=3)
-            # tresh = round(tresh, 3)
-            tp, fp, tn, fn, acc = 0, 0, 0, 0, 0
-            for j, cos_sim in enumerate(cos_sims):
-                _, _, pair_label = dataset[j]
-                # print('pair_label:', pair_label)
-                if pair_label == '1':  # positive pair
-                    if cos_sim < tresh:
-                        tp += 1
-                    else:
-                        fn += 1
-                else:  # negative pair
-                    if cos_sim >= tresh:
-                        tn += 1
-                    else:
-                        fp += 1
 
-            acc = round((tp + tn) / (tp + tn + fp + fn), 4)
-            # print(f'tester_multitask_FACEVERIFICATION - {i}/{treshs.size()[0]-1} - tresh: {tresh} - acc: {acc}')
-
-            if acc > best_acc:
-                best_acc = acc
-                best_tresh = tresh
+            all_tp_eval[i], all_fp_eval[i], all_tn_eval[i], all_fn_eval[i], all_acc_eval[i], all_tar_eval[i], all_far_eval[i] = self.eval_one_treshold(cos_sims, pair_labels, tresh, verbose)
 
             if verbose:
                 print('\x1b[2K', end='')
                 print(f'tester_multitask_FACEVERIFICATION - {i}/{len(treshs)-1} - tresh: {tresh}', end='\r')
 
-        return best_tresh, best_acc
+        best_acc_idx = torch.argmax(all_acc_eval)
+        best_acc = all_acc_eval[best_acc_idx]
+        best_tresh = treshs[best_acc_idx]
+
+        desired_far = 1e-03
+        coeficient, expoent = self.get_coeficient_and_exponent(desired_far)
+        coeficient += 1
+        next_far = coeficient / (10 ** expoent)   # for far=0.001, next_far=0.002
+         
+        desired_far_idx = torch.where(all_far_eval < next_far)[0][-1]
+        tar = all_tar_eval[desired_far_idx]
+        far = all_far_eval[desired_far_idx]
+
+        # return best_tresh, best_acc, tar, far
+        return best_tresh, best_acc, tar, desired_far
 
 
     def do_verification_test(self, model, dataset='LFW', num_points=1200, verbose=True):
@@ -264,7 +314,8 @@ class VerificationTester:
                 if verbose:
                     print('computing distances')
                 
-                dist = self.compute_embeddings_distance(embedd, verbose=verbose)
+                # dist = self.compute_embeddings_distance_insightface(embedd, verbose=verbose)
+                dist = self.compute_embeddings_cosine_distance(embedd, verbose=verbose)
                 
                 if verbose:
                     print('dist.size():', dist.size())
@@ -276,11 +327,12 @@ class VerificationTester:
 
             # print('distances:', distances)
             # print('distances.size():', distances.size())
-
             if verbose:
                 print('Findind best treshold...')
-            best_tresh, best_acc = self.find_best_treshold(dataset, distances, verbose=verbose)
-            return best_tresh, best_acc
+
+            best_tresh, best_acc, tar, far = self.find_best_treshold(dataset, distances, verbose=verbose)
+            return best_tresh, best_acc, tar, far
+
 
 
 
@@ -304,8 +356,8 @@ if __name__ == "__main__":
     model, best_epoch, metrics = verif_tester.load_trained_weights_from_cfg_file(args.cfg)
     model.eval()
 
-    best_tresh, best_acc = verif_tester.do_verification_test(model, args.dataset, args.num_points, verbose=True)
-    print('\nFinal - best_tresh:', best_tresh, '    best_acc:', best_acc)
+    best_tresh, best_acc, tar, far = verif_tester.do_verification_test(model, args.dataset, args.num_points, verbose=True)
+    print('\nFinal - dataset: %s  -  (tresh: %.6f    acc: %.6f)    (tar: %.6f    far: %.10f)' % (args.dataset, best_tresh, best_acc, tar, far))
 
     print('Finished!')
 
