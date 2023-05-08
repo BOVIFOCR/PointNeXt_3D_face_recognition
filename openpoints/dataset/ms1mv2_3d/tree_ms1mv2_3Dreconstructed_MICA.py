@@ -91,9 +91,9 @@ class TreeMS1MV2_3DReconstructedMICA:
         return unique_subjects_names, samples_per_subject, indexes_samples
 
     def get_all_pointclouds_paths_count(self, dir_path, dir_level=2, pc_ext='.ply'):
-        print('get_all_pointclouds_paths_count() - getting all pointclouds paths ...')
+        print(f'get_all_pointclouds_paths_count() - getting all pointclouds paths from: \'{dir_path}\'')
         all_pc_paths, all_pc_subjects = self.get_all_pointclouds_paths(dir_path, dir_level, pc_ext)
-        print('get_all_pointclouds_paths_count() - counting samples per subject ...')
+        print(f'get_all_pointclouds_paths_count() - counting samples per subject from: \'{dir_path}\'')
         unique_subjects_names, samples_per_subject, indexes_samples = self.count_samples_per_subject(all_pc_paths, dir_level, pc_ext)
         return all_pc_paths, all_pc_subjects, unique_subjects_names, samples_per_subject, indexes_samples
 

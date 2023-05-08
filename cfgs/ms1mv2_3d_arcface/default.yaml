@@ -37,7 +37,9 @@ batch_size: 128
 dataloader:
   num_workers: 6
 
-num_classes: 1000
+# num_classes: 1000
+num_classes: 5000
+
 # ---------------------------------------------------------------------------- #
 # Training cfgs
 # ---------------------------------------------------------------------------- #
@@ -49,11 +51,12 @@ num_classes: 1000
 
 # Training parameters
 # lr: 0.001
-lr: 0.0005
+lr: 0.0001
 
 # this one is better. 
 sched: cosine
-epochs: 100
+# epochs: 100
+epochs: 150
 warmup_epochs: 0
 min_lr: null
 
@@ -83,6 +86,6 @@ val_batch_size: 128
 pretrained_path: null
 
 wandb:
-  project: PointNeXt_MS1MV2-3D_1000classes
+  project: PointNeXt_MS1MV2-3D_5000classes
 
 seed: null

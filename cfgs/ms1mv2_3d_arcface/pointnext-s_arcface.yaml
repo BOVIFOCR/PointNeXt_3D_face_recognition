@@ -36,7 +36,8 @@ model:
   cls_args: 
     # NAME: ClsHead
     NAME: ClsHeadArcface
-    num_classes: 1000
+    # num_classes: 1000
+    num_classes: 5000
     # mlps: [512, 256]
     mlps: [512, 512]
     norm_args: 
