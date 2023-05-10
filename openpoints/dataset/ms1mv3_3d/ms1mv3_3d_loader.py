@@ -9,11 +9,11 @@ from torch.utils.data import Dataset
 from ..build import DATASETS
 from math import floor
 
-from .tree_ms1mv2_3Dreconstructed_MICA import TreeMS1MV2_3DReconstructedMICA
+from .tree_ms1mv3_3Dreconstructed_MICA import TreeMS1MV3_3DReconstructedMICA
 
 
 @DATASETS.register_module()
-class MS1MV2_3D(Dataset):
+class MS1MV3_3D(Dataset):
     
     def __init__(self,
                  n_classes,
@@ -58,7 +58,7 @@ class MS1MV2_3D(Dataset):
 
         logging.info(f'loading dataset...')
 
-        subjects_with_pc_paths, unique_subjects_names, samples_per_subject = TreeMS1MV2_3DReconstructedMICA().load_filter_organize_pointclouds_paths(self.DATA_PATH, dir_level, file_ext, min_samples, max_samples)
+        subjects_with_pc_paths, unique_subjects_names, samples_per_subject = TreeMS1MV3_3DReconstructedMICA().load_filter_organize_pointclouds_paths(self.DATA_PATH, dir_level, file_ext, min_samples, max_samples)
         assert len(unique_subjects_names) == len(samples_per_subject)
 
         self.cat = unique_subjects_names    # Bernardo

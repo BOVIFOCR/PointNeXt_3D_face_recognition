@@ -3,11 +3,11 @@ Reference: https://github.com/lightaime/deep_gcns_torch/tree/master/examples/cla
 """
 
 from ..build import DATASETS
-from .ms1mv2_3d_loader import MS1MV2_3D
+from .ms1mv3_3d_loader import MS1MV3_3D
 
 
 @DATASETS.register_module()
-class MS1MV2_3D_93424subj(MS1MV2_3D):
+class MS1MV3_3D_93424subj(MS1MV3_3D):
     
     def __init__(self,
                  num_points=2900,

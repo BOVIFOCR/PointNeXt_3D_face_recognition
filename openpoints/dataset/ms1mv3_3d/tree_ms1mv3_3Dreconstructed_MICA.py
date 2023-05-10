@@ -8,7 +8,7 @@ import random
 
 
 # BERNARDO
-class TreeMS1MV2_3DReconstructedMICA:
+class TreeMS1MV3_3DReconstructedMICA:
 
     def get_all_sub_folders(self, dir_path='', dir_level=2):
         return sorted(glob(dir_path + '/*'*dir_level))

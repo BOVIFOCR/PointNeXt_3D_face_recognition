@@ -7,48 +7,48 @@ num_classes: 22
 # num_classes: 93424
 
 wandb:
-  project: PointNeXt_MS1MV2-3D_22classes
-  # project: PointNeXt_MS1MV2-3D_1000classes
-  # project: PointNeXt_MS1MV2-3D_2000classes
-  # project: PointNeXt_MS1MV2-3D_5000classes
-  # project: PointNeXt_MS1MV2-3D_10000classes
-  # project: PointNeXt_MS1MV2-3D_93424classes (whole dataset)
+  project: PointNeXt_MS1MV3-3D_22classes
+  # project: PointNeXt_MS1MV3-3D_1000classes
+  # project: PointNeXt_MS1MV3-3D_2000classes
+  # project: PointNeXt_MS1MV3-3D_5000classes
+  # project: PointNeXt_MS1MV3-3D_10000classes
+  # project: PointNeXt_MS1MV3-3D_93424classes (whole dataset)
 
 dataset:
   common:
-    NAME: MS1MV2_3D_22subj     # 22 CLASSES (toy example)
+    NAME: MS1MV3_3D_22subj     # 22 CLASSES (toy example)
     data_dir: '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_22subj'
 
-    # NAME: MS1MV2_3D_1000subj   # 1000 CLASSES
+    # NAME: MS1MV3_3D_1000subj   # 1000 CLASSES
     # data_dir: '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_1000subj'
   
-    # NAME: MS1MV2_3D_2000subj   # 2000 CLASSES
+    # NAME: MS1MV3_3D_2000subj   # 2000 CLASSES
     # data_dir: '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_2000subj'
 
-    # NAME: MS1MV2_3D_5000subj   # 5000 CLASSES
+    # NAME: MS1MV3_3D_5000subj   # 5000 CLASSES
     # data_dir: '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_5000subj'
 
-    # NAME: MS1MV2_3D_10000subj  # 10000 CLASSES
+    # NAME: MS1MV3_3D_10000subj  # 10000 CLASSES
     # data_dir: '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_10000subj'
 
-    # NAME: MS1MV2_3D_93424subj  # 93424 CLASSES (whole dataset)
+    # NAME: MS1MV3_3D_93424subj  # 93424 CLASSES (whole dataset)
     # data_dir: '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images'
   
   train:
     split: train
     # num_points: 1024  # in training, use sampled 1024 points for data augmentation.
     num_points: 2048
-    # num_points: 2900  # Default value for MS1MV2-3D reconstructed by MICA
+    # num_points: 2900  # Default value for MS1MV3-3D reconstructed by MICA
   val:
     split: test
     # num_points: 1024  # in testing, use uniformly pre-sampled 1024 points for evaluation (following https://github.com/lulutang0608/Point-BERT)
     num_points: 2048
-    # num_points: 2900  # Default value for MS1MV2-3D reconstructed by MICA
+    # num_points: 2900  # Default value for MS1MV3-3D reconstructed by MICA
 
 # Dataset Related
 # num_points: 1024  # number of poins actually used in training and evaluation
 num_points: 2048
-# num_points: 2900  # Default value for MS1MV2-3D reconstructed by MICA
+# num_points: 2900  # Default value for MS1MV3-3D reconstructed by MICA
 
 # Bernardo
 # val_other_datasets: null
@@ -105,7 +105,7 @@ criterion_args:   # args passed to openpoints/loss/build.py -> ArcFace.__init__(
 # ---------------------------------------------------------------------------- #
 # io and misc
 # ---------------------------------------------------------------------------- #
-log_dir: 'ms1mv2_3d'
+log_dir: 'ms1mv3_3d'
 print_freq: 10
 val_freq: 1
 
