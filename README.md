@@ -17,11 +17,13 @@
    |   |   |   ├── mesh_centralized-nosetip_with-normals_filter-radius=100.npy  (face point cloud, 83KB)
    |   |   ├── 1-FaceId-0
    |   |   |   ├── mesh_centralized-nosetip_with-normals_filter-radius=100.npy
+   |   |   |   |
    |   ├── m.0qr_08d
    |   |   ├── 0-FaceId-0
    |   |   |   ├── mesh_centralized-nosetip_with-normals_filter-radius=100.npy
    |   |   ├── 1-FaceId-0
    |   |   |   ├── mesh_centralized-nosetip_with-normals_filter-radius=100.npy
+   |   |   |   |
    |   ├── m.0qr_08d
    ```
    
