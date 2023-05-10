@@ -1,23 +1,23 @@
 
-# num_classes: 22
+num_classes: 22
 # num_classes: 1000
 # num_classes: 2000
 # num_classes: 5000
 # num_classes: 10000
-num_classes: 93424
+# num_classes: 93424
 
 wandb:
-  # project: PointNeXt_MS1MV2-3D_22classes
+  project: PointNeXt_MS1MV2-3D_22classes
   # project: PointNeXt_MS1MV2-3D_1000classes
   # project: PointNeXt_MS1MV2-3D_2000classes
   # project: PointNeXt_MS1MV2-3D_5000classes
   # project: PointNeXt_MS1MV2-3D_10000classes
-  project: PointNeXt_MS1MV2-3D_93424classes (whole dataset)
+  # project: PointNeXt_MS1MV2-3D_93424classes (whole dataset)
 
 dataset:
   common:
-    # NAME: MS1MV2_3D_22subj     # 22 CLASSES (toy example)
-    # data_dir: '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_22subj'
+    NAME: MS1MV2_3D_22subj     # 22 CLASSES (toy example)
+    data_dir: '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_22subj'
 
     # NAME: MS1MV2_3D_1000subj   # 1000 CLASSES
     # data_dir: '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_1000subj'
@@ -31,8 +31,8 @@ dataset:
     # NAME: MS1MV2_3D_10000subj  # 10000 CLASSES
     # data_dir: '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_10000subj'
 
-    NAME: MS1MV2_3D_93424subj  # 93424 CLASSES (whole dataset)
-    data_dir: '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images'
+    # NAME: MS1MV2_3D_93424subj  # 93424 CLASSES (whole dataset)
+    # data_dir: '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images'
   
   train:
     split: train
@@ -80,8 +80,8 @@ dataloader:
 # ---------------------------------------------------------------------------- #
 
 # Training parameters
-# lr: 0.001
-lr: 0.0001
+lr: 0.001
+# lr: 0.0001
 
 # this one is better. 
 sched: cosine
