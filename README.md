@@ -9,21 +9,21 @@
    
    ```
    MS-Celeb-1M_3D_reconstruction_MICA
-       ├── images_22subj
-       |   ├── m.0ql2bgg  (subject)
-       |   |   ├── 0-FaceId-0  (sample)
-       |   |   |   ├── mesh_centralized-nosetip_with-normals_filter-radius=100.npy  (face point cloud)
-       |   |   ├── 1-FaceId-0
-       |   |   |   ├── mesh_centralized-nosetip_with-normals_filter-radius=100.npy
-       |   ├── m.0qr_08d
-       |   |   ├── 0-FaceId-0
-       |   |   |   ├── mesh_centralized-nosetip_with-normals_filter-radius=100.npy
-       |   |   ├── 1-FaceId-0
-       |   |   |   ├── mesh_centralized-nosetip_with-normals_filter-radius=100.npy
-       |   ├── m.0qr_08d
+   ├── images_22subj
+   |   ├── m.0ql2bgg  (subject)
+   |   |   ├── 0-FaceId-0  (sample)
+   |   |   |   ├── mesh_centralized-nosetip_with-normals_filter-radius=100.npy  (face point cloud, 83KB)
+   |   |   ├── 1-FaceId-0
+   |   |   |   ├── mesh_centralized-nosetip_with-normals_filter-radius=100.npy
+   |   ├── m.0qr_08d
+   |   |   ├── 0-FaceId-0
+   |   |   |   ├── mesh_centralized-nosetip_with-normals_filter-radius=100.npy
+   |   |   ├── 1-FaceId-0
+   |   |   |   ├── mesh_centralized-nosetip_with-normals_filter-radius=100.npy
+   |   ├── m.0qr_08d
    ```
    
-3. **Config dataset path in file** "BOVIFOCR_PointNeXt_3D_face_recognition/cfgs/ms1mv2_3d_arcface/default.yaml":
+3. **Config `data_dir` in file** "BOVIFOCR_PointNeXt_3D_face_recognition/cfgs/ms1mv3_3d_arcface/default.yaml":
    ```
    dataset:
      common:
@@ -36,10 +36,11 @@
 
    ```
    cd BOVIFOCR_PointNeXt_3D_face_recognition
-   python examples/classification/main.py --cfg cfgs/ms1mv2_3d_arcface/pointnext-s_arcface.yaml
+   python examples/classification/main.py --cfg cfgs/ms1mv3_3d_arcface/pointnext-s_arcface.yaml
    
    ```
-   
+
+5. **Trained models will be saved in** "BOVIFOCR_PointNeXt_3D_face_recognition/log/ms1mv2_3d_arcface"
    
  ----------------------
 
