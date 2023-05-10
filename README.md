@@ -3,7 +3,7 @@
 1. **Clone this repo, install requirements**
 
 2. **Download and extract the micro-dataset "MS1MV3-3D_22_subjects" (MICA facial reconstruction)**:
-   [[MS1MV3-3D 22 subjects]](https://drive.google.com/file/d/1dYxdXTBGyaNF_dB4vQ70EhmUgpHe7jcU/view?usp=sharing)
+   [[MS1MV3-3D 22 subjects (117MB)]](https://drive.google.com/file/d/1dYxdXTBGyaNF_dB4vQ70EhmUgpHe7jcU/view?usp=sharing)
    
    Dataset structure:
    
