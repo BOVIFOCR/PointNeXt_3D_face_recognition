@@ -1,4 +1,49 @@
-# PointNeXt
+# BOVIFOCR Instructions for Face Recognition
+
+1. **Clone this repo, install requirements**
+
+2. **Download and extract the micro-dataset "MS1MV3-3D_22_subjects" (MICA facial reconstruction)**:
+   [[MS1MV3-3D 22 subjects]](https://drive.google.com/file/d/1dYxdXTBGyaNF_dB4vQ70EhmUgpHe7jcU/view?usp=sharing)
+   
+   Dataset structure:
+   
+   ```
+   MS-Celeb-1M_3D_reconstruction_MICA
+       ├── images_22subj
+       |   ├── m.0ql2bgg  (subject)
+       |   |   ├── 0-FaceId-0  (sample)
+       |   |   |   ├── mesh_centralized-nosetip_with-normals_filter-radius=100.npy  (face point cloud)
+       |   |   ├── 1-FaceId-0
+       |   |   |   ├── mesh_centralized-nosetip_with-normals_filter-radius=100.npy
+       |   ├── m.0qr_08d
+       |   |   ├── 0-FaceId-0
+       |   |   |   ├── mesh_centralized-nosetip_with-normals_filter-radius=100.npy
+       |   |   ├── 1-FaceId-0
+       |   |   |   ├── mesh_centralized-nosetip_with-normals_filter-radius=100.npy
+       |   ├── m.0qr_08d
+   ```
+   
+3. **Config dataset path in file** "BOVIFOCR_PointNeXt_3D_face_recognition/cfgs/ms1mv2_3d_arcface/default.yaml":
+   ```
+   dataset:
+     common:
+       NAME: MS1MV3_3D_22subj     # 22 CLASSES (toy example)
+       data_dir: '/path/to/MS-Celeb-1M_3D_reconstruction_originalMICA/images_22subj'
+
+   ```
+ 
+4. **Train PointNeXt**:
+
+   ```
+   cd BOVIFOCR_PointNeXt_3D_face_recognition
+   python examples/classification/main.py --cfg cfgs/ms1mv2_3d_arcface/pointnext-s_arcface.yaml
+   
+   ```
+   
+   
+ ----------------------
+
+# PointNeXt Original instructions
 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/pointnext-revisiting-pointnet-with-improved/semantic-segmentation-on-s3dis)](https://paperswithcode.com/sota/semantic-segmentation-on-s3dis?p=pointnext-revisiting-pointnet-with-improved)
 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/pointnext-revisiting-pointnet-with-improved/3d-point-cloud-classification-on-scanobjectnn)](https://paperswithcode.com/sota/3d-point-cloud-classification-on-scanobjectnn?p=pointnext-revisiting-pointnet-with-improved)
 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/pointnext-revisiting-pointnet-with-improved/semantic-segmentation-on-s3dis-area5)](https://paperswithcode.com/sota/semantic-segmentation-on-s3dis-area5?p=pointnext-revisiting-pointnet-with-improved)
