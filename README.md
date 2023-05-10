@@ -1,6 +1,8 @@
 # BOVIFOCR Instructions for Face Recognition
 
-1. **Clone this repo, install requirements**
+1. **Clone this repo, install requirements (Python 3.7, Cuda 11.3)**
+   - environment.yml (conda env)
+   - requirements.txt (python deps)
 
 2. **Download and extract the micro-dataset "MS1MV3-3D_22_subjects" (MICA facial reconstruction)**:
    [[MS1MV3-3D 22 subjects (117MB)]](https://drive.google.com/file/d/1dYxdXTBGyaNF_dB4vQ70EhmUgpHe7jcU/view?usp=sharing)
@@ -29,7 +31,6 @@
      common:
        NAME: MS1MV3_3D_22subj     # 22 CLASSES (toy example)
        data_dir: '/path/to/MS-Celeb-1M_3D_reconstruction_originalMICA/images_22subj'
-
    ```
  
 4. **Train PointNeXt**:
@@ -37,7 +38,6 @@
    ```
    cd BOVIFOCR_PointNeXt_3D_face_recognition
    python examples/classification/main.py --cfg cfgs/ms1mv3_3d_arcface/pointnext-s_arcface.yaml
-   
    ```
 
 5. **Trained models will be saved in** "BOVIFOCR_PointNeXt_3D_face_recognition/log/ms1mv2_3d_arcface"
