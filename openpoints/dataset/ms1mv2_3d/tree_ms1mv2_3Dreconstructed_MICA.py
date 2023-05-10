@@ -9,7 +9,7 @@ import random
 
 # BERNARDO
 class TreeMS1MV2_3DReconstructedMICA:
-    
+
     def get_all_sub_folders(self, dir_path='', dir_level=2):
         return sorted(glob(dir_path + '/*'*dir_level))
 
@@ -17,8 +17,7 @@ class TreeMS1MV2_3DReconstructedMICA:
         # sub_folders = [f.path for f in os.scandir(dir_path) if f.is_dir()]
         sub_folders = [f.name for f in os.scandir(dir_path) if f.is_dir()]
         return sorted(sub_folders)
-    
-    
+
     def get_all_pointclouds_paths(self, dir_path, dir_level=2, pc_ext='.ply'):
         all_sub_folders = self.get_all_sub_folders(dir_path, dir_level)
         all_pc_paths = []
@@ -28,7 +27,9 @@ class TreeMS1MV2_3DReconstructedMICA:
         for sub_folder_pointcloud in all_sub_folders:
             pc_paths = sorted(glob(sub_folder_pointcloud + '/*' + pc_ext))
             # print('pc_paths:', pc_paths)
-            assert len(pc_paths) > 0
+            # assert len(pc_paths) > 0
+            if not len(pc_paths) > 0:
+                raise Exception(f'Error, no file found by pattern \'*{pc_ext}\' in folder \'{sub_folder_pointcloud}\'')
             pc_subjects = [pc_path.split('/')[-3] for pc_path in pc_paths]
             # print('pc_subjects:', pc_subjects)
             assert len(pc_subjects) > 0
@@ -120,6 +121,7 @@ class TreeMS1MV2_3DReconstructedMICA:
         return filtered_pc_paths, filtered_pc_subjects, filtered_subjects_names, filtered_samples_per_subject
 
     def load_filter_organize_pointclouds_paths(self, dir_path, dir_level=2, pc_ext='.ply', min_samples=2, max_samples=-1):
+        if not os.path.isdir(dir_path): raise Exception(f'Error, dir not found: \'{dir_path}\'')
         all_pc_paths, all_pc_subjects, unique_subjects_names, samples_per_subject, indexes_samples = self.get_all_pointclouds_paths_count(dir_path, dir_level=dir_level, pc_ext=pc_ext)
         print('load_filter_organize_pointclouds_paths() - filtering paths by min and max samples ...')
         all_pc_paths, all_pc_subjects, unique_subjects_names, samples_per_subject = self.filter_paths_by_minimum_samples(all_pc_paths, all_pc_subjects, unique_subjects_names, samples_per_subject, pc_ext, min_samples, max_samples)
@@ -166,7 +168,7 @@ class TreeMS1MV2_3DReconstructedMICA:
 
     def make_pairs_global_indexes(self, all_pc_paths, all_pc_subjects, unique_subjects_names, samples_per_subject, indexes_samples, num_pos_pairs, num_neg_pairs, reuse_samples=True):
         random.seed(440)
-        
+
         def choose_random_sample(begin, end, amount=1):
             return random.sample(range(begin, end+1), amount)[0]
 
@@ -177,14 +179,14 @@ class TreeMS1MV2_3DReconstructedMICA:
             if avail_all_pc_paths[idx1] == True and avail_all_pc_paths[idx2] == True:
                 return True
             return False
-        
+
         def is_pair_duplicate(pair_search, all_pairs):
             assert len(pair_search) == 2
             found_indexes = [idx for idx, pair in enumerate(all_pairs) if pair_search[0] in pair and pair_search[1] in pair]
             if len(found_indexes) > 0:
                 return True
             return False
-        
+
         pos_pairs = [None] * num_pos_pairs
         neg_pairs = [None] * num_neg_pairs
         avail_all_pc_paths = [True] * len(all_pc_paths)
@@ -208,7 +210,7 @@ class TreeMS1MV2_3DReconstructedMICA:
                 if not reuse_samples:
                     while not is_pair_valid(avail_all_pc_paths, one_pos_pair_idx[0], one_pos_pair_idx[1]):
                         one_pos_pair_idx = make_random_pair(begin_subj, end_subj, amount=2)
-                
+
                 avail_all_pc_paths[one_pos_pair_idx[0]], avail_all_pc_paths[one_pos_pair_idx[1]] = False, False
                 pos_pairs[pair_idx] = [unique_subjects_names[rand_subj_idx[subj_idx]], one_pos_pair_idx[0], one_pos_pair_idx[1]]
                 # print(str(pair_idx)+'/'+str(num_pos_pairs) + '    subject_name:', unique_subjects_names[rand_subj_idx[subj_idx]], '    samples_per_subject:', samples_per_subject[rand_subj_idx[subj_idx]], '    indexes_samples:', indexes_samples[rand_subj_idx[subj_idx]], '    pos_pairs[pair_idx]:', pos_pairs[pair_idx])
@@ -225,7 +227,7 @@ class TreeMS1MV2_3DReconstructedMICA:
         while pair_idx < num_neg_pairs:
             begin_subj1, end_subj1 = indexes_samples[rand_subj_idx[subj1_idx]]
             begin_subj2, end_subj2 = indexes_samples[rand_subj_idx[subj2_idx]]
-            
+
             one_neg_pair_idx = [choose_random_sample(begin_subj1, end_subj1, amount=1), choose_random_sample(begin_subj2, end_subj2, amount=1)]
             while is_pair_duplicate(one_neg_pair_idx, neg_pairs[:pair_idx]):
                 print('Duplicate negative pair found:', one_neg_pair_idx, '    formed pairs:', str(pair_idx)+'/'+str(num_neg_pairs))
@@ -234,7 +236,7 @@ class TreeMS1MV2_3DReconstructedMICA:
                 begin_subj1, end_subj1 = indexes_samples[rand_subj_idx[subj1_idx]]
                 begin_subj2, end_subj2 = indexes_samples[rand_subj_idx[subj2_idx]]
                 one_neg_pair_idx = [choose_random_sample(begin_subj1, end_subj1, amount=1), choose_random_sample(begin_subj2, end_subj2, amount=1)]
-            
+
             if not reuse_samples:
                 while not is_pair_valid(avail_all_pc_paths, one_neg_pair_idx[0], one_neg_pair_idx[1]):
                     one_neg_pair_idx = [choose_random_sample(begin_subj1, end_subj1, amount=1), choose_random_sample(begin_subj2, end_subj2, amount=1)]
@@ -268,7 +270,7 @@ class TreeMS1MV2_3DReconstructedMICA:
             # print('pos_pairs[i]:', pos_pairs[i])            
             # raw_input('PAUSED')
             # print('--------------------------')
-        
+
         for i in range(len(neg_pairs)):    # neg_pairs[i] = [0=subj_name1, 1=global_idx1, 2=subj_name2, 3=global_idx2]
             file_name_sample1 = all_pc_paths[neg_pairs[i][1]].split('/')[-2]
             file_name_sample2 = all_pc_paths[neg_pairs[i][3]].split('/')[-2]
@@ -277,7 +279,7 @@ class TreeMS1MV2_3DReconstructedMICA:
             # print('neg_pairs[i]:', neg_pairs[i])            
             # raw_input('PAUSED')
             # print('--------------------------')
-        
+
         return pos_pairs, neg_pairs
 
 
@@ -308,7 +310,7 @@ class TreeMS1MV2_3DReconstructedMICA:
             # print('all_neg_pairs_paths[-1]:', all_neg_pairs_paths[-1])            
             # raw_input('PAUSED')
             # print('--------------------------')
-        
+
         # return all_pos_pairs_paths, all_neg_pairs_paths
         return all_pos_pairs_paths, all_neg_pairs_paths, pos_pair_label, neg_pair_label
 
@@ -320,7 +322,7 @@ class TreeMS1MV2_3DReconstructedMICA:
             file.write(str(num_pos_pairs_train) + '\ttrain positive pairs' + '\n')
             for i, pos_pair in enumerate(pos_pairs_format_lfw[:num_pos_pairs_train]):
                 file.write(str(pos_pair[0]) + '\t' + str(pos_pair[1]) + '\t' + str(pos_pair[2]) + '\n')
-            
+
             file.write(str(num_neg_pairs_train) + '\ttrain negative pairs' + '\n')
             for i, neg_pair in enumerate(neg_pairs_format_lfw[:num_neg_pairs_train]):
                 file.write(str(neg_pair[0]) + '\t' + str(neg_pair[1]) + '\t' + str(neg_pair[2]) + '\t' + str(neg_pair[3]) + '\n')
@@ -331,7 +333,7 @@ class TreeMS1MV2_3DReconstructedMICA:
             file.write(str(num_pos_pairs_test) + '\ttest positive pairs' + '\n')
             for i, pos_pair in enumerate(pos_pairs_format_lfw[num_pos_pairs_test:]):
                 file.write(str(pos_pair[0]) + '\t' + str(pos_pair[1]) + '\t' + str(pos_pair[2]) + '\n')
-            
+
             file.write(str(num_neg_pairs_test) + '\ttest negative pairs' + '\n')
             for i, neg_pair in enumerate(neg_pairs_format_lfw[num_neg_pairs_test:]):
                 file.write(str(neg_pair[0]) + '\t' + str(neg_pair[1]) + '\t' + str(neg_pair[2]) + '\t' + str(neg_pair[3]) + '\n')
@@ -349,7 +351,7 @@ class TreeMS1MV2_3DReconstructedMICA:
                 print('duplicate_pairs:', duplicate_pairs)
                 print('found_indexes:', found_indexes)
                 print('----------------')
-        
+
         for pair_search in neg_pairs:
             found_indexes = [idx for idx, pair in enumerate(neg_pairs) if pair[1] in pair_search and pair[3] in pair_search]
             num_repeated_pos_pairs += len(found_indexes) - 1  # consider only repetitions
@@ -359,7 +361,7 @@ class TreeMS1MV2_3DReconstructedMICA:
                 print('duplicate_pairs:', duplicate_pairs)
                 print('found_indexes:', found_indexes)
                 print('----------------')
-        
+
         print('pos_pairs:', len(pos_pairs), '    num_repeated_pos_pairs:', num_repeated_pos_pairs)
         print('neg_pairs:', len(neg_pairs), '    num_repeated_neg_pairs:', num_repeated_neg_pairs)
 
@@ -368,11 +370,11 @@ if __name__ == '__main__':
     dataset_path = '/home/bjgbiesseck/GitHub/MICA/demo/output/MS-Celeb-1M/ms1m-retinaface-t1/images'
 
     dir_level = 2
-    
+
     # file_ext = '.ply'
     # file_ext = '_centralized_nosetip.ply'
     file_ext = '_centralized-nosetip_with-normals_filter-radius=100.npy'
-    
+
     min_samples = 1
     # min_samples = 3
 
@@ -405,7 +407,7 @@ if __name__ == '__main__':
     #     print('unique_subj_name', unique_subj_name, '    samp_per_subj:', samp_per_subj)
     # print('len(unique_subjects_names):', len(unique_subjects_names), '    len(samples_per_subject):', len(samples_per_subject))
     # sys.exit(0)
-    
+
     print('Searching all files ending with \'' + file_ext + '\' in \'' + dataset_path + '\' ...')
     all_pc_paths, all_pc_subjects, unique_subjects_names, samples_per_subject, indexes_samples = TreeMS1MV2_3DReconstructedMICA().get_all_pointclouds_paths_count(dataset_path, dir_level, file_ext)
     # for pc_path, pc_subject in zip(all_pc_paths, all_pc_subjects):
@@ -421,7 +423,7 @@ if __name__ == '__main__':
     # print('Making train and test pairs...')
     # pos_pairs, neg_pairs = TreeMS1MV2_3DReconstructedMICA().make_pairs_global_indexes(all_pc_paths, all_pc_subjects, unique_subjects_names, samples_per_subject, indexes_samples, num_pos_pairs, num_neg_pairs, reuse_samples)
     # pos_pairs_format_labels_paths, neg_pairs_labels_paths, pos_pair_label, neg_pair_label = TreeMS1MV2_3DReconstructedMICA().make_pairs_labels_with_paths(all_pc_paths, all_pc_subjects, unique_subjects_names, samples_per_subject, indexes_samples, num_pos_pairs, num_neg_pairs, reuse_samples)
-    
+
     print('Making train and test pairs to save in file...')
     pos_pairs_format_lfw, neg_pairs_format_lfw = TreeMS1MV2_3DReconstructedMICA().make_pairs_indexes_lfw_format(all_pc_paths, all_pc_subjects, unique_subjects_names, samples_per_subject, indexes_samples, num_pos_pairs, num_neg_pairs, reuse_samples)
     perc_train = 0.8
@@ -446,7 +448,7 @@ if __name__ == '__main__':
     # #     print('unique_subj_name:', unique_subj_name, '    samples_per_subj:', samples_per_subj)
     # # print('len(unique_subj_name):', len(unique_subjects_names), '    len(samples_per_subj):', len(samples_per_subject))
     # # sys.exit(0)
-    
+
     # print('Searching all files ending with \'' + file_ext + '\'...')
     # subjects_with_pc_paths, unique_subjects_names, samples_per_subject = TreeLFW_3DReconstructedMICA().load_filter_organize_pointclouds_paths(dataset_path, file_ext, min_samples, max_samples)
     # # for subj_pc_path in subjects_with_pc_paths:
@@ -459,7 +461,7 @@ if __name__ == '__main__':
     # subtitle = '(min_samples='+str(min_samples)+', max_samples='+str(max_samples)+')'
     # path_image = '/home/bjgbiesseck/GitHub/pointnet2_tf_original_biesseck/face_recognition_3d/logs_training/samples_per_subject_lfw_dataset_minsamples='+str(min_samples)+'_maxsamples='+str(max_samples)+'.png'
     # plots_fr_pointnet2.plot_samples_per_class_and_histogram(unique_subjects_names, samples_per_subject, log_scale, title=title, subtitle=subtitle, path_image=path_image, show_fig=False, save_fig=True)
-    
+
     # protocol_file_path = '/home/bjgbiesseck/GitHub/MICA/demo/output/lfw/pairsDevTrain.txt'
     # all_pos_pairs_paths, all_neg_pairs_paths, pos_pair_label, neg_pair_label = TreeLFW_3DReconstructedMICA().load_pairs_samples_protocol_from_file(protocol_file_path, dataset_path, file_ext)
     # for pos_pairs in all_pos_pairs_paths:

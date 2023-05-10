@@ -2,22 +2,12 @@
 Reference: https://github.com/lightaime/deep_gcns_torch/tree/master/examples/classification
 """
 
-import os
-import glob
-import h5py
 import numpy as np
-import pickle
 import logging
-import ssl
-import urllib
-from pathlib import Path
-from tqdm import tqdm
 import torch
 from torch.utils.data import Dataset
-from torchvision.datasets.utils import extract_archive, check_integrity
 from ..build import DATASETS
-import sys
-from math import ceil, floor
+from math import floor
 
 from .tree_ms1mv2_3Dreconstructed_MICA import TreeMS1MV2_3DReconstructedMICA
 
@@ -26,7 +16,8 @@ from .tree_ms1mv2_3Dreconstructed_MICA import TreeMS1MV2_3DReconstructedMICA
 class MS1MV2_3D(Dataset):
     
     def __init__(self,
-                 num_points=2900,
+                 n_classes,
+                 num_points,
                  data_dir="",
                  split='train',
                  transform=None
@@ -35,28 +26,29 @@ class MS1MV2_3D(Dataset):
         self.partition = 'train' if split.lower() == 'train' else 'val'  # val = test
         # Load paths
         #self.data, self.label = load_data(data_dir, self.partition, self.url)
-        self.num_points = 2900
+        self.num_points = num_points
         self.transform = transform
 
         # 22 CLASSES (TOY EXAMPLE)
-        # DATA_PATH = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_reduced'
-        # n_classes = 22
+        # self.DATA_PATH = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_22subj'
+        self.DATA_PATH = data_dir
+        self.n_classes = n_classes
 
         # 1000 CLASSES
-        # DATA_PATH = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_1000subj'
-        # n_classes = 1000
+        # self.DATA_PATH = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_1000subj'
+        # self.n_classes = 1000
 
         # 2000 CLASSES
-        # DATA_PATH = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_2000subj'
-        # n_classes = 2000
+        # self.DATA_PATH = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_2000subj'
+        # self.n_classes = 2000
 
         # # 5000 CLASSES
-        DATA_PATH = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_5000subj'
-        n_classes = 5000
+        # self.DATA_PATH = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_5000subj'
+        # self.n_classes = 5000
 
         # # 10000 CLASSES
-        # DATA_PATH = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_10000subj'
-        # n_classes = 10000
+        # self.DATA_PATH = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_10000subj'
+        # self.n_classes = 10000
 
         dir_level=2
         min_samples=2
@@ -66,7 +58,7 @@ class MS1MV2_3D(Dataset):
 
         logging.info(f'loading dataset...')
 
-        subjects_with_pc_paths, unique_subjects_names, samples_per_subject = TreeMS1MV2_3DReconstructedMICA().load_filter_organize_pointclouds_paths(DATA_PATH, dir_level, file_ext, min_samples, max_samples)
+        subjects_with_pc_paths, unique_subjects_names, samples_per_subject = TreeMS1MV2_3DReconstructedMICA().load_filter_organize_pointclouds_paths(self.DATA_PATH, dir_level, file_ext, min_samples, max_samples)
         assert len(unique_subjects_names) == len(samples_per_subject)
 
         self.cat = unique_subjects_names    # Bernardo
