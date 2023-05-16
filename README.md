@@ -42,7 +42,7 @@
    python examples/classification/main.py --cfg cfgs/ms1mv3_3d_arcface/pointnext-s_arcface.yaml
    ```
 
-5. **Trained models will be saved in** "BOVIFOCR_PointNeXt_3D_face_recognition/log/ms1mv2_3d_arcface"
+5. **Trained models will be saved in** "BOVIFOCR_PointNeXt_3D_face_recognition/log/ms1mv3_3d_arcface"
    
  ----------------------
 
