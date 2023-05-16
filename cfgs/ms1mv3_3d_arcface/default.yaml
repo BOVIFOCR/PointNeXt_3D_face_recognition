@@ -51,8 +51,8 @@ num_points: 2048
 # num_points: 2900  # Default value for MS1MV3-3D reconstructed by MICA
 
 # Bernardo
-# val_other_datasets: null
-val_other_datasets: ['lfw']
+val_other_datasets: null
+# val_other_datasets: ['lfw']
 
 feature_keys: pos
 
