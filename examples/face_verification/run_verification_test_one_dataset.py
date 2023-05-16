@@ -35,8 +35,8 @@ class VerificationTester:
     
     def __init__(self):
         self.LFW_POINT_CLOUDS = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/lfw'
-        # self.LFW_VERIF_PAIRS_LIST = '/datasets1/bjgbiesseck/lfw/pairs.txt'            # whole dataset (6000 face pairs)
-        self.LFW_VERIF_PAIRS_LIST = '/datasets1/bjgbiesseck/lfw/pairsDevTest.txt'       # only test set (1000 face pairs)
+        self.LFW_TRAIN_VERIF_PAIRS_LIST = '/datasets1/bjgbiesseck/lfw/pairs.txt'        # whole dataset (6000 face pairs)
+        self.LFW_TEST_VERIF_PAIRS_LIST = '/datasets1/bjgbiesseck/lfw/pairsDevTest.txt'  # only test set (1000 face pairs)
 
         self.MLFW_POINT_CLOUDS = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MLFW'
         # MLFW_VERIF_PAIRS_LIST = '/datasets1/bjgbiesseck/MLFW/pairs.txt'
@@ -103,8 +103,9 @@ class VerificationTester:
     def load_dataset(self, dataset_name='lfw', verbose=True):
         if dataset_name.upper() == 'LFW':
             file_ext = 'mesh_centralized-nosetip_with-normals_filter-radius=100.npy'
-            all_pairs_paths_label, pos_pair_label, neg_pair_label = LFW_Pairs_3DReconstructedMICA().load_pointclouds_pairs_with_labels(self.LFW_POINT_CLOUDS, self.LFW_VERIF_PAIRS_LIST, file_ext)
-            
+            all_train_pairs_paths_label, pos_pair_label, neg_pair_label = LFW_Pairs_3DReconstructedMICA().load_pointclouds_pairs_with_labels(self.LFW_POINT_CLOUDS, self.LFW_TRAIN_VERIF_PAIRS_LIST, file_ext)
+            all_test_pairs_paths_label, pos_pair_label, neg_pair_label = LFW_Pairs_3DReconstructedMICA().load_pointclouds_pairs_with_labels(self.LFW_POINT_CLOUDS, self.LFW_TEST_VERIF_PAIRS_LIST, file_ext)
+
             if verbose:
                 # print('\nLFW_Pairs_3DReconstructedMICA - load_pointclouds_pairs_with_labels')
                 # print('all_pairs_paths_label:', all_pairs_paths_label)
@@ -113,8 +114,9 @@ class VerificationTester:
                 # print('neg_pair_label:', neg_pair_label)
                 print('Loading dataset:', dataset_name)
         
-        dataset = self.load_point_clouds_from_disk(all_pairs_paths_label, verbose=verbose)
-        return dataset
+        train_dataset = self.load_point_clouds_from_disk(all_train_pairs_paths_label, verbose=verbose)
+        test_dataset = self.load_point_clouds_from_disk(all_test_pairs_paths_label, verbose=verbose)
+        return train_dataset, test_dataset
 
 
     def subsample_point_cloud(self, points, npoints=1024):
@@ -236,7 +238,8 @@ class VerificationTester:
         best_acc = 0
         
         # start, end, step = 0, 1, 0.01   # used in insightface code
-        start, end, step = 0, 4, 0.005
+        start, end, step = 0, 2, 0.005
+        # start, end, step = 0, 4, 0.005
         # start, end, step = 0, 1, 0.005
 
         all_margins_eval = torch.arange(start, end+step, step, dtype=torch.float64)
@@ -276,17 +279,7 @@ class VerificationTester:
         # return best_tresh, best_acc, tar, desired_far
 
 
-    def do_verification_test(self, model, dataset='LFW', num_points=1200, verbose=True):
-        model.eval()
-
-        # # Load one point cloud (test)
-        # path_point_cloud = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_reduced/m.0ql2bgg/0-FaceId-0/mesh_centralized-nosetip_with-normals_filter-radius=100.npy'
-        # points = load_one_point_cloud(path_point_cloud)
-
-        # Load test dataset
-        dataset = self.load_dataset(dataset_name=dataset, verbose=verbose)
-
-        cache = self.organize_and_subsample_pointcloud(dataset, npoints=num_points, verbose=verbose)
+    def compute_set_distances(self, cache={}, verbose=True):
         if verbose:
             print('cache[\'x\'].size():', cache['x'].size())
 
@@ -324,14 +317,38 @@ class VerificationTester:
 
                 if verbose:
                     print('---------------')
+            
+            return distances
 
-            # print('distances:', distances)
-            # print('distances.size():', distances.size())
-            if verbose:
-                print('Findind best treshold...')
 
-            best_tresh, best_acc, tar, far = self.find_best_treshold(dataset, distances, verbose=verbose)
-            return best_tresh, best_acc, tar, far
+    def do_verification_test(self, model, dataset='LFW', num_points=1200, verbose=True):
+        model.eval()
+
+        # # Load one point cloud (test)
+        # path_point_cloud = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_reduced/m.0ql2bgg/0-FaceId-0/mesh_centralized-nosetip_with-normals_filter-radius=100.npy'
+        # points = load_one_point_cloud(path_point_cloud)
+
+        # Load test dataset
+        train_dataset, test_dataset = self.load_dataset(dataset_name=dataset, verbose=verbose)
+
+        train_cache = self.organize_and_subsample_pointcloud(train_dataset, npoints=num_points, verbose=verbose)
+        test_cache = self.organize_and_subsample_pointcloud(test_dataset, npoints=num_points, verbose=verbose)
+
+        train_distances = self.compute_set_distances(train_cache, verbose=verbose)
+        test_distances = self.compute_set_distances(test_cache, verbose=verbose)
+
+        # print('distances:', distances)
+        # print('distances.size():', distances.size())
+        if verbose:
+            print('Findind best treshold...')
+
+        best_train_tresh, best_train_acc, train_tar, train_far = self.find_best_treshold(train_dataset, train_distances, verbose=verbose)
+
+        test_pair_labels = torch.tensor([int(test_dataset[j][2]) for j in range(len(test_dataset))], dtype=torch.int8)   # dataset[j] is (pc0, pc1, pair_label)
+        test_tp, test_fp, test_tn, test_fn, test_acc, test_tar, test_far = self.eval_one_treshold(test_distances, test_pair_labels, best_train_tresh, verbose)
+
+        return best_train_tresh, best_train_acc, train_tar, train_far, \
+                test_acc, test_tar, test_far
 
 
 
@@ -356,77 +373,9 @@ if __name__ == "__main__":
     model, best_epoch, metrics = verif_tester.load_trained_weights_from_cfg_file(args.cfg)
     model.eval()
 
-    best_tresh, best_acc, tar, far = verif_tester.do_verification_test(model, args.dataset, args.num_points, verbose=True)
-    print('\nFinal - dataset: %s  -  (tresh: %.6f    acc: %.6f)    (tar: %.6f    far: %.10f)' % (args.dataset, best_tresh, best_acc, tar, far))
-
+    best_train_tresh, best_train_acc, train_tar, train_far, \
+    test_acc, test_tar, test_far = verif_tester.do_verification_test(model, args.dataset, args.num_points, verbose=True)
+    
+    print('\nFinal - dataset: %s  -  (best_train_tresh: %.6f    best_train_acc: %.6f)    (train_tar: %.6f    train_far: %.10f)' % (args.dataset, best_train_tresh, best_train_acc, train_tar, train_far))
+    print('                         (test_acc: %.6f    test_tar: %.6f    test_far: %.10f)' % (test_acc, test_tar, test_far))
     print('Finished!')
-
-
-
-
-
-'''
-# BACKUP (WORKING)
-if __name__ == "__main__":
-    # Initialization
-    args, opts = parse_args()
-    cfg = EasyConfig()
-    cfg.load(args.cfg, recursive=True)
-    cfg.update(opts)
-    if not hasattr(cfg, 'seed'):
-        cfg.seed = np.random.randint(1, 10000)
-
-    # Build model
-    print('Building model...')
-    model = build_model_from_cfg(cfg.model).to(0)
-
-    # Load trained weights
-    model, best_epoch, metrics = load_trained_weights_from_cfg_file(args.cfg)
-    model.eval()
-
-    # # Load one point cloud (test)
-    # path_point_cloud = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_reduced/m.0ql2bgg/0-FaceId-0/mesh_centralized-nosetip_with-normals_filter-radius=100.npy'
-    # points = load_one_point_cloud(path_point_cloud)
-
-    # Load test dataset
-    dataset = load_dataset(dataset_name=args.dataset)
-
-    cache = organize_and_subsample_pointcloud(dataset, npoints=args.num_points)
-    print('cache[\'x\'].size():', cache['x'].size())
-
-    with torch.no_grad():
-        distances = torch.zeros(int(len(cache['x'])/2))
-        batch_size = 64
-        num_batches = len(cache['x']) // batch_size
-        last_batch_size = len(cache['x']) % batch_size
-        if last_batch_size > 0: num_batches += 1
-        for i in range(0, num_batches):
-            start_batch_idx = i*batch_size
-            num_samples = batch_size
-            if start_batch_idx+batch_size > len(cache['x']): num_samples = last_batch_size
-            end_batch_idx = start_batch_idx+num_samples
-
-            data = {}
-            data['pos'] = cache['pos'][start_batch_idx:end_batch_idx]
-            data['x']   = cache['x'][start_batch_idx:end_batch_idx]
-            embedd = model.get_face_embedding(data)
-            # print('embedd:', embedd)
-            print(f'computing face embeddings - batch_size: {batch_size} - batch {i}/{num_batches-1} - batch_idxs: {start_batch_idx}:{end_batch_idx} - embedd.size():', embedd.size())
-
-            print('computing distances')
-            dist = compute_embeddings_distance(embedd)
-            print('dist.size():', dist.size())
-            distances[int(start_batch_idx/2):int(end_batch_idx/2)] = dist
-
-            print('---------------')
-
-        # print('distances:', distances)
-        # print('distances.size():', distances.size())
-
-        print('Findind best treshold...')
-        best_tresh, best_acc = find_best_treshold(dataset, distances)
-        print('\nFinal - best_tresh:', best_tresh, '    best_acc:', best_acc)
-
-        print('Finished!')
-'''
-        

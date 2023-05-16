@@ -342,8 +342,11 @@ def validate_other_datasets(model, cfg, epoch, writer):
     verificationTester = VerificationTester()
     for dataset in cfg.val_other_datasets:
         print(f'Validating on dataset {dataset}...')
-        best_tresh, best_acc, tar, far = verificationTester.do_verification_test(model, dataset, cfg.num_points, verbose=False)
-        print(f'    {dataset} - best_tresh:', best_tresh, '    best_acc:', best_acc)
-        writer.add_scalar(f'{dataset}_acc', best_acc, epoch)
-        writer.add_scalar(f'{dataset}_treshold', best_acc, epoch)
+        # best_tresh, best_acc, tar, far = verificationTester.do_verification_test(model, dataset, cfg.num_points, verbose=False)
+        best_train_tresh, best_train_acc, train_tar, train_far, \
+        test_acc, test_tar, test_far = verificationTester.do_verification_test(model, dataset, cfg.num_points, verbose=True)
+
+        print(f'    {dataset} - best_train_tresh:', best_train_tresh, '    best_train_acc:', best_train_acc)
+        writer.add_scalar(f'{dataset}_acc', best_train_acc, epoch)
+        writer.add_scalar(f'{dataset}_treshold', best_train_tresh, epoch)
     print('\n')
