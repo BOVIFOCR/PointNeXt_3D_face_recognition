@@ -245,8 +245,8 @@ class VerificationTester:
         best_tresh = 0
         best_acc = 0
         
-        # start, end, step = 0, 1, 0.01   # used in insightface code
-        start, end, step = 0, 2, 0.005
+        # start, end, step = 0, 4, 0.001   # used in insightface code: https://github.com/deepinsight/insightface/blob/master/recognition/arcface_torch/eval/verification.py#L181
+        start, end, step = 0, 2, 0.001
         # start, end, step = 0, 4, 0.005
         # start, end, step = 0, 1, 0.005
 
@@ -385,5 +385,5 @@ if __name__ == "__main__":
     test_acc, test_tar, test_far = verif_tester.do_verification_test(model, args.dataset, args.num_points, verbose=True)
     
     print('\nFinal - dataset: %s  -  (best_train_tresh: %.6f    best_train_acc: %.6f)    (train_tar: %.6f    train_far: %.10f)' % (args.dataset, best_train_tresh, best_train_acc, train_tar, train_far))
-    print('                         (test_acc: %.6f    test_tar: %.6f    test_far: %.10f)' % (test_acc, test_tar, test_far))
+    print('                         (used_tresh: %.6f    test_acc: %.6f    test_tar: %.6f    test_far: %.10f)' % (best_train_tresh, test_acc, test_tar, test_far))
     print('Finished!')
