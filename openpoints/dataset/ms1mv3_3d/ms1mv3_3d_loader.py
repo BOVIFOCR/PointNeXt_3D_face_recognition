@@ -1,7 +1,7 @@
 """Modified from DeepGCN and DGCNN
 Reference: https://github.com/lightaime/deep_gcns_torch/tree/master/examples/classification
 """
-
+import sys
 import numpy as np
 import logging
 import torch
@@ -140,10 +140,16 @@ class MS1MV3_3D(Dataset):
 
         # point_set = np.loadtxt(fn[1],delimiter=',').astype(np.float32)   # original
         # point_set = np.load(fn[1]).astype(np.float32)                    # Bernardo
-        if fn[1].endswith('.npy'):
-            point_set = np.load(fn[1]).astype(np.float32)                  # Bernardo
-        # elif fn[1].endswith('.ply'):
-        #     point_set = self._readply(fn[1]).astype(np.float32)          # Bernardo
+        
+        try:
+            if fn[1].endswith('.npy'):
+                point_set = np.load(fn[1]).astype(np.float32)                  # Bernardo
+            # elif fn[1].endswith('.ply'):
+            #     point_set = self._readply(fn[1]).astype(np.float32)          # Bernardo
+        except ValueError as ve:
+            print(ve)
+            print(f'fn[1]: \'{fn[1]}\'')
+            sys.exit(0)
 
         # Bernardo
         if point_set.shape[1] == 7:        # if contains curvature
