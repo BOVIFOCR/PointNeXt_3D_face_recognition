@@ -76,7 +76,7 @@ class VerificationTester:
         dataset = [None] * len(pairs_paths)
         for i, pair in enumerate(pairs_paths):
             pair_label, path0, path1 = pair
-            
+
             if verbose:
                 # print(f'pair: {i}/{len(pairs_paths)-1}', end='\r')
                 print('loading_point_clouds_from_disk')
@@ -114,9 +114,17 @@ class VerificationTester:
                 # print('neg_pair_label:', neg_pair_label)
                 print('Loading dataset:', dataset_name)
         
-        train_dataset = self.load_point_clouds_from_disk(all_train_pairs_paths_label, verbose=verbose)
-        test_dataset = self.load_point_clouds_from_disk(all_test_pairs_paths_label, verbose=verbose)
-        return train_dataset, test_dataset
+            train_set = self.load_point_clouds_from_disk(all_train_pairs_paths_label, verbose=verbose)
+            test_set = self.load_point_clouds_from_disk(all_test_pairs_paths_label, verbose=verbose)
+
+            train_pair_labels = [int(train_set[i][2]) for i in range(len(train_set))]   # train_set[j] is (pc0, pc1, pair_label)
+            test_pair_labels = [int(test_set[i][2]) for i in range(len(test_set))]      # test_set[j] is  (pc0, pc1, pair_label)
+        
+        else:
+            print(f'\nError: dataloader for dataset \'{dataset_name}\' not implemented!\n')
+            sys.exit(0)
+
+        return train_set, train_pair_labels, test_set, test_pair_labels
 
 
     def subsample_point_cloud(self, points, npoints=1024):
@@ -200,16 +208,16 @@ class VerificationTester:
         return distances
 
 
-    def eval_one_treshold(self, cos_sims, pair_labels, tresh=2.0, verbose=True):
+    def eval_one_treshold(self, cos_dists, pair_labels, tresh=2.0, verbose=True):
         tp, fp, tn, fn = 0., 0., 0., 0.
-        for j, (cos_sim, pair_label) in enumerate(zip(cos_sims, pair_labels)):
+        for j, (cos_dist, pair_label) in enumerate(zip(cos_dists, pair_labels)):
             if pair_label == 1:   # positive pair
-                if cos_sim < tresh:
+                if cos_dist < tresh:
                     tp += 1
                 else:
                     fn += 1
             else:  # negative pair
-                if cos_sim >= tresh:
+                if cos_dist >= tresh:
                     tn += 1
                 else:
                     fp += 1
@@ -233,7 +241,7 @@ class VerificationTester:
         return coeficient, expoent
 
 
-    def find_best_treshold(self, dataset, cos_sims, verbose=True):
+    def find_best_treshold(self, dataset, cos_dists, pair_labels, verbose=True):
         best_tresh = 0
         best_acc = 0
         
@@ -251,12 +259,12 @@ class VerificationTester:
         all_tar_eval = torch.zeros_like(all_margins_eval, dtype=torch.float64)
         all_far_eval = torch.zeros_like(all_margins_eval, dtype=torch.float64)
 
-        pair_labels = torch.tensor([int(dataset[j][2]) for j in range(len(dataset))], dtype=torch.int8)   # dataset[j] is (pc0, pc1, pair_label)
+        pair_labels = torch.tensor(pair_labels, dtype=torch.int8)
 
         treshs = torch.arange(start, end+step, step)
         for i, tresh in enumerate(treshs):
 
-            all_tp_eval[i], all_fp_eval[i], all_tn_eval[i], all_fn_eval[i], all_acc_eval[i], all_tar_eval[i], all_far_eval[i] = self.eval_one_treshold(cos_sims, pair_labels, tresh, verbose)
+            all_tp_eval[i], all_fp_eval[i], all_tn_eval[i], all_fn_eval[i], all_acc_eval[i], all_tar_eval[i], all_far_eval[i] = self.eval_one_treshold(cos_dists, pair_labels, tresh, verbose)
 
             if verbose:
                 print('\x1b[2K', end='')
@@ -329,10 +337,10 @@ class VerificationTester:
         # points = load_one_point_cloud(path_point_cloud)
 
         # Load test dataset
-        train_dataset, test_dataset = self.load_dataset(dataset_name=dataset, verbose=verbose)
+        train_set, train_pair_labels, test_set, test_pair_labels = self.load_dataset(dataset_name=dataset, verbose=verbose)
 
-        train_cache = self.organize_and_subsample_pointcloud(train_dataset, npoints=num_points, verbose=verbose)
-        test_cache = self.organize_and_subsample_pointcloud(test_dataset, npoints=num_points, verbose=verbose)
+        train_cache = self.organize_and_subsample_pointcloud(train_set, npoints=num_points, verbose=verbose)
+        test_cache = self.organize_and_subsample_pointcloud(test_set, npoints=num_points, verbose=verbose)
 
         train_distances = self.compute_set_distances(train_cache, verbose=verbose)
         test_distances = self.compute_set_distances(test_cache, verbose=verbose)
@@ -342,9 +350,9 @@ class VerificationTester:
         if verbose:
             print('Findind best treshold...')
 
-        best_train_tresh, best_train_acc, train_tar, train_far = self.find_best_treshold(train_dataset, train_distances, verbose=verbose)
+        best_train_tresh, best_train_acc, train_tar, train_far = self.find_best_treshold(train_set, train_distances, train_pair_labels, verbose=verbose)
 
-        test_pair_labels = torch.tensor([int(test_dataset[j][2]) for j in range(len(test_dataset))], dtype=torch.int8)   # dataset[j] is (pc0, pc1, pair_label)
+        test_pair_labels = torch.tensor(test_pair_labels, dtype=torch.int8)
         test_tp, test_fp, test_tn, test_fn, test_acc, test_tar, test_far = self.eval_one_treshold(test_distances, test_pair_labels, best_train_tresh, verbose)
 
         return best_train_tresh, best_train_acc, train_tar, train_far, \
