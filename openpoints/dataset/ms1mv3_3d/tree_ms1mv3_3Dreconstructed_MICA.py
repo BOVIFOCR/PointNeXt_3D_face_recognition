@@ -18,57 +18,66 @@ class TreeMS1MV3_3DReconstructedMICA:
         sub_folders = [f.name for f in os.scandir(dir_path) if f.is_dir()]
         return sorted(sub_folders)
 
-    def get_all_pointclouds_paths(self, dir_path, dir_level=2, pc_ext='.ply'):
-        all_sub_folders = self.get_all_sub_folders(dir_path, dir_level)
-        all_pc_paths = []
-        all_pc_subjects = []
-        # print('all_sub_folders:', all_sub_folders)
-        # print('len(all_sub_folders):', len(all_sub_folders))
-        for sub_folder_pointcloud in all_sub_folders:
-            pc_paths = sorted(glob(sub_folder_pointcloud + '/*' + pc_ext))
-            # print('pc_paths:', pc_paths)
-            # assert len(pc_paths) > 0
-            if not len(pc_paths) > 0:
-                raise Exception(f'Error, no file found by pattern \'*{pc_ext}\' in folder \'{sub_folder_pointcloud}\'')
-            pc_subjects = [pc_path.split('/')[-3] for pc_path in pc_paths]
-            # print('pc_subjects:', pc_subjects)
-            assert len(pc_subjects) > 0
-            # print('----------------------')
-            # raw_input('PAUSED')
-            all_pc_paths += pc_paths
-            all_pc_subjects += pc_subjects
-        
-        assert len(all_pc_paths) > 0
-        assert len(all_pc_subjects) > 0
-        return all_pc_paths, all_pc_subjects
+    def save_list_to_file(self, lines, file_path):
+        try:
+            with open(file_path, 'w') as file:
+                file.writelines("%s\n" % line for line in lines)
+        except IOError:
+            print("An error occurred while writing to the file.")
+    
+    def read_file_lines(self, file_path):
+        lines = []
+        try:
+            with open(file_path, 'r') as file:
+                lines = file.readlines()
+                lines = [line.strip() for line in lines]
+        except FileNotFoundError:
+            print("File not found.")
+        except IOError:
+            print("An error occurred while reading the file.")    
+        return lines
 
-    '''
-    # TEMP WHILE FACES ARE BEING RECONSTRUCTED BY MICA
     def get_all_pointclouds_paths(self, dir_path, dir_level=2, pc_ext='.ply'):
         all_sub_folders = self.get_all_sub_folders(dir_path, dir_level)
         all_pc_paths = []
         all_pc_subjects = []
-        # print('all_sub_folders:', all_sub_folders)
-        # print('len(all_sub_folders):', len(all_sub_folders))
-        for sub_folder_pointcloud in all_sub_folders:
-            # print('sub_folder_pointcloud:', sub_folder_pointcloud)
-            pc_paths = sorted(glob(sub_folder_pointcloud + '/*' + pc_ext))
-            # print('pc_paths:', pc_paths)
-            if len(pc_paths) > 0:    # Added to prevent error
+
+        paths_file_name = dir_path.split('/')[-1] + '_paths.txt'
+        subjs_file_name = dir_path.split('/')[-1] + '_subjs.txt'
+        path_paths_file = dir_path + '/' + paths_file_name
+        path_subjs_file = dir_path + '/' + subjs_file_name
+
+        if not os.path.isfile(path_paths_file) or not os.path.isfile(path_subjs_file):
+            # print('all_sub_folders:', all_sub_folders)
+            # print('len(all_sub_folders):', len(all_sub_folders))
+            for sub_folder_pointcloud in all_sub_folders:
+                pc_paths = sorted(glob(sub_folder_pointcloud + '/*' + pc_ext))
                 # print('pc_paths:', pc_paths)
-                assert len(pc_paths) > 0
-                pc_subjects = [pc_path.split('/')[-(dir_level+1)] for pc_path in pc_paths]
+                # assert len(pc_paths) > 0
+                if not len(pc_paths) > 0:
+                    raise Exception(f'Error, no file found by pattern \'*{pc_ext}\' in folder \'{sub_folder_pointcloud}\'')
+                pc_subjects = [pc_path.split('/')[-3] for pc_path in pc_paths]
                 # print('pc_subjects:', pc_subjects)
                 assert len(pc_subjects) > 0
                 # print('----------------------')
                 # raw_input('PAUSED')
                 all_pc_paths += pc_paths
                 all_pc_subjects += pc_subjects
+            
+            print('get_all_pointclouds_paths - Saving point cloud paths:', path_paths_file)
+            self.save_list_to_file(all_pc_paths, path_paths_file)
+            print('get_all_pointclouds_paths - Saving subjects names:', path_subjs_file)
+            self.save_list_to_file(all_pc_subjects, path_subjs_file)
+        
+        else:
+            print('get_all_pointclouds_paths - Reading point cloud paths:', path_paths_file)
+            all_pc_paths = self.read_file_lines(path_paths_file)
+            print('get_all_pointclouds_paths - Reading subjects names:', path_subjs_file)
+            all_pc_subjects = self.read_file_lines(path_subjs_file)
         
         assert len(all_pc_paths) > 0
         assert len(all_pc_subjects) > 0
         return all_pc_paths, all_pc_subjects
-    '''
 
     def count_samples_per_subject(self, pc_paths_list=[''], dir_level=2, pc_ext='.ply'):
         unique_subjects_names = []
