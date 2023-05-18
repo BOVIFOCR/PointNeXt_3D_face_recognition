@@ -1,13 +1,14 @@
 """Modified from DeepGCN and DGCNN
 Reference: https://github.com/lightaime/deep_gcns_torch/tree/master/examples/classification
 """
-import sys
+import sys, os
 import numpy as np
 import logging
 import torch
 from torch.utils.data import Dataset
 from ..build import DATASETS
 from math import floor
+import pickle
 
 from .tree_ms1mv3_3Dreconstructed_MICA import TreeMS1MV3_3DReconstructedMICA
 
@@ -24,32 +25,12 @@ class MS1MV3_3D(Dataset):
                  ):
 
         self.partition = 'train' if split.lower() == 'train' else 'val'  # val = test
-        # Load paths
-        #self.data, self.label = load_data(data_dir, self.partition, self.url)
         self.num_points = num_points
         self.transform = transform
 
-        # 22 CLASSES (TOY EXAMPLE)
-        # self.DATA_PATH = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_22subj'
         self.DATA_PATH = data_dir
         self.n_classes = n_classes
-
-        # 1000 CLASSES
-        # self.DATA_PATH = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_1000subj'
-        # self.n_classes = 1000
-
-        # 2000 CLASSES
-        # self.DATA_PATH = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_2000subj'
-        # self.n_classes = 2000
-
-        # # 5000 CLASSES
-        # self.DATA_PATH = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_5000subj'
-        # self.n_classes = 5000
-
-        # # 10000 CLASSES
-        # self.DATA_PATH = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_10000subj'
-        # self.n_classes = 10000
-
+        
         dir_level=2
         min_samples=2
         max_samples=-1
@@ -58,7 +39,25 @@ class MS1MV3_3D(Dataset):
 
         logging.info(f'loading dataset...')
 
-        subjects_with_pc_paths, unique_subjects_names, samples_per_subject = TreeMS1MV3_3DReconstructedMICA().load_filter_organize_pointclouds_paths(self.DATA_PATH, dir_level, file_ext, min_samples, max_samples)
+        paths_file_name = 'paths_' + self.DATA_PATH.split('/')[-1] + '_min-samples=' + str(min_samples) + '_max-samples=' + str(max_samples) + 'file-ext=\'' + file_ext + '\'.pkl'
+        path_paths_file = self.DATA_PATH + '/' + paths_file_name
+
+        if not os.path.isfile(path_paths_file):
+            subjects_with_pc_paths, unique_subjects_names, samples_per_subject = TreeMS1MV3_3DReconstructedMICA().load_filter_organize_pointclouds_paths(self.DATA_PATH, dir_level, file_ext, min_samples, max_samples)
+
+            paths_dict = {'subjects_with_pc_paths': subjects_with_pc_paths, 'unique_subjects_names': unique_subjects_names, 'samples_per_subject': samples_per_subject}
+            with open(path_paths_file, 'wb') as file:
+                print('MS1MV3_3D.__init__ - Saving point cloud paths:', path_paths_file)
+                pickle.dump(paths_dict, file)
+
+        else:
+            with open(path_paths_file, 'rb') as file:
+                print('MS1MV3_3D.__init__ - Reading point cloud paths:', path_paths_file)
+                paths_dict = pickle.load(file)
+                subjects_with_pc_paths = paths_dict['subjects_with_pc_paths']
+                unique_subjects_names = paths_dict['unique_subjects_names']
+                samples_per_subject = paths_dict['samples_per_subject']
+
         assert len(unique_subjects_names) == len(samples_per_subject)
 
         self.cat = unique_subjects_names    # Bernardo
