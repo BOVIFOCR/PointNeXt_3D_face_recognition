@@ -24,7 +24,7 @@ def parse_args():
     parser = argparse.ArgumentParser('run_verification_test.py')
     parser.add_argument('--cfg', type=str, required=True, help='config file')
     parser.add_argument('--dataset', type=str, default='lfw', help='dataset name')
-    parser.add_argument('--num_points', type=int, default=1024, help='number of points to subsample')
+    parser.add_argument('--num_points', type=int, default=2048, help='number of points to subsample')
     # parser.add_argument('--pretrained', type=str, required=True, help='checkpoint_file.pth')
     parser.add_argument('--profile', action='store_true', default=False, help='set to True to profile speed')
     args, opts = parser.parse_known_args()
@@ -358,35 +358,14 @@ class VerificationTester:
         # path_point_cloud = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_reduced/m.0ql2bgg/0-FaceId-0/mesh_centralized-nosetip_with-normals_filter-radius=100.npy'
         # points = load_one_point_cloud(path_point_cloud)
 
-        '''
-        # Load test dataset
-        train_set, train_pair_labels, test_set, test_pair_labels = self.load_dataset(dataset_name=dataset, verbose=verbose)
-
-        train_cache = self.organize_and_subsample_pointcloud(train_set, npoints=num_points, verbose=verbose)
-        test_cache = self.organize_and_subsample_pointcloud(test_set, npoints=num_points, verbose=verbose)
-        '''
-
         train_cache, train_pair_labels, test_cache, test_pair_labels = self.load_organize_and_subsample_pointclouds(dataset, num_points, verbose=verbose)
 
         train_distances = self.compute_set_distances(model, train_cache, verbose=verbose)
         test_distances = self.compute_set_distances(model, test_cache, verbose=verbose)
-        
-        '''
-        if verbose:
-            print('Findind best treshold...')
-
-        best_train_tresh, best_train_acc, train_tar, train_far = self.find_best_treshold(train_distances, train_pair_labels, verbose=verbose)
-
-        test_pair_labels = torch.tensor(test_pair_labels, dtype=torch.int8)
-        test_tp, test_fp, test_tn, test_fn, test_acc, test_tar, test_far = self.eval_one_treshold(test_distances, test_pair_labels, best_train_tresh, verbose)
-
-        return best_train_tresh, best_train_acc, train_tar, train_far, \
-                test_acc, test_tar, test_far
-        '''
 
         best_train_tresh, best_train_acc, train_tar, train_far, \
             test_acc, test_tar, test_far, test_tp, test_fp, test_tn, test_fn = self.find_best_treshold_train_eval_test_set(train_distances, train_pair_labels, test_distances, test_pair_labels, verbose=verbose)
-        
+
         return best_train_tresh, best_train_acc, train_tar, train_far, \
                 test_acc, test_tar, test_far
 
