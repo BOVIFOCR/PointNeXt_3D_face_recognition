@@ -52,7 +52,7 @@ class VerificationTester:
         return pc
 
 
-    def load_trained_weights_from_cfg_file(self, cfg_path='log/ms1mv2_3d_arcface/ms1mv2_3d_arcface-train-pointnext-s_arcface-ngpus1-seed6520-20230429-170750-98s4kHjBdbgbRWcegn9V9y/pointnext-s_arcface.yaml'):
+    def load_trained_weights_from_cfg_file(self, model, cfg_path='log/ms1mv2_3d_arcface/ms1mv2_3d_arcface-train-pointnext-s_arcface-ngpus1-seed6520-20230429-170750-98s4kHjBdbgbRWcegn9V9y/pointnext-s_arcface.yaml'):
         # pretrained_path = 'log/ms1mv2_3d_arcface/ms1mv2_3d_arcface-train-pointnext-s_arcface-ngpus1-seed6520-20230429-170750-98s4kHjBdbgbRWcegn9V9y/checkpoint/ms1mv2_3d_arcface-train-pointnext-s_arcface-ngpus1-seed6520-20230429-170750-98s4kHjBdbgbRWcegn9V9y_ckpt_best.pth'
         file_name = '*_ckpt_best.pth'
         # file_name = '*_ckpt_latest.pth'
@@ -241,7 +241,7 @@ class VerificationTester:
         return coeficient, expoent
 
 
-    def find_best_treshold(self, dataset, cos_dists, pair_labels, verbose=True):
+    def find_best_treshold(self, cos_dists, pair_labels, verbose=True):
         best_tresh = 0
         best_acc = 0
         
@@ -287,7 +287,7 @@ class VerificationTester:
         # return best_tresh, best_acc, tar, desired_far
 
 
-    def compute_set_distances(self, cache={}, verbose=True):
+    def compute_set_distances(self, model, cache={}, verbose=True):
         if verbose:
             print('cache[\'x\'].size():', cache['x'].size())
 
@@ -329,6 +329,28 @@ class VerificationTester:
             return distances
 
 
+    def load_organize_and_subsample_pointclouds(self, dataset='LFW', num_points=1200, verbose=True):
+        # Load test dataset
+        train_set, train_pair_labels, test_set, test_pair_labels = self.load_dataset(dataset_name=dataset, verbose=verbose)
+
+        train_cache = self.organize_and_subsample_pointcloud(train_set, npoints=num_points, verbose=verbose)
+        test_cache = self.organize_and_subsample_pointcloud(test_set, npoints=num_points, verbose=verbose)
+
+        return train_cache, train_pair_labels, test_cache, test_pair_labels
+
+
+    def find_best_treshold_train_eval_test_set(self, train_distances, train_pair_labels, test_distances, test_pair_labels, verbose=True):
+        if verbose:
+            print('Findind best treshold...')
+
+        best_train_tresh, best_train_acc, train_tar, train_far = self.find_best_treshold(train_distances, train_pair_labels, verbose=verbose)
+
+        test_pair_labels = torch.tensor(test_pair_labels, dtype=torch.int8)
+        test_tp, test_fp, test_tn, test_fn, test_acc, test_tar, test_far = self.eval_one_treshold(test_distances, test_pair_labels, best_train_tresh, verbose)
+
+        return best_train_tresh, best_train_acc, train_tar, train_far, test_acc, test_tar, test_far, test_tp, test_fp, test_tn, test_fn
+
+
     def do_verification_test(self, model, dataset='LFW', num_points=1200, verbose=True):
         model.eval()
 
@@ -336,28 +358,37 @@ class VerificationTester:
         # path_point_cloud = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_reduced/m.0ql2bgg/0-FaceId-0/mesh_centralized-nosetip_with-normals_filter-radius=100.npy'
         # points = load_one_point_cloud(path_point_cloud)
 
+        '''
         # Load test dataset
         train_set, train_pair_labels, test_set, test_pair_labels = self.load_dataset(dataset_name=dataset, verbose=verbose)
 
         train_cache = self.organize_and_subsample_pointcloud(train_set, npoints=num_points, verbose=verbose)
         test_cache = self.organize_and_subsample_pointcloud(test_set, npoints=num_points, verbose=verbose)
+        '''
 
-        train_distances = self.compute_set_distances(train_cache, verbose=verbose)
-        test_distances = self.compute_set_distances(test_cache, verbose=verbose)
+        train_cache, train_pair_labels, test_cache, test_pair_labels = self.load_organize_and_subsample_pointclouds(dataset, num_points, verbose=verbose)
 
-        # print('distances:', distances)
-        # print('distances.size():', distances.size())
+        train_distances = self.compute_set_distances(model, train_cache, verbose=verbose)
+        test_distances = self.compute_set_distances(model, test_cache, verbose=verbose)
+        
+        '''
         if verbose:
             print('Findind best treshold...')
 
-        best_train_tresh, best_train_acc, train_tar, train_far = self.find_best_treshold(train_set, train_distances, train_pair_labels, verbose=verbose)
+        best_train_tresh, best_train_acc, train_tar, train_far = self.find_best_treshold(train_distances, train_pair_labels, verbose=verbose)
 
         test_pair_labels = torch.tensor(test_pair_labels, dtype=torch.int8)
         test_tp, test_fp, test_tn, test_fn, test_acc, test_tar, test_far = self.eval_one_treshold(test_distances, test_pair_labels, best_train_tresh, verbose)
 
         return best_train_tresh, best_train_acc, train_tar, train_far, \
                 test_acc, test_tar, test_far
+        '''
 
+        best_train_tresh, best_train_acc, train_tar, train_far, \
+            test_acc, test_tar, test_far, test_tp, test_fp, test_tn, test_fn = self.find_best_treshold_train_eval_test_set(train_distances, train_pair_labels, test_distances, test_pair_labels, verbose=verbose)
+        
+        return best_train_tresh, best_train_acc, train_tar, train_far, \
+                test_acc, test_tar, test_far
 
 
 
@@ -378,7 +409,7 @@ if __name__ == "__main__":
     model = build_model_from_cfg(cfg.model).to(0)
 
     # Load trained weights
-    model, best_epoch, metrics = verif_tester.load_trained_weights_from_cfg_file(args.cfg)
+    model, best_epoch, metrics = verif_tester.load_trained_weights_from_cfg_file(model, args.cfg)
     model.eval()
 
     best_train_tresh, best_train_acc, train_tar, train_far, \
