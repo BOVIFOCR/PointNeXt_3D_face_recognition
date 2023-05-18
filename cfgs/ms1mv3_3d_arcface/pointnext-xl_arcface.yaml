@@ -11,9 +11,9 @@ model:
   NAME: BaseClsArcface
   encoder_args:
     NAME: PointNextEncoder
-    blocks: [1, 4, 7, 7, 7, 4, 4]
-    strides: [1, 4, 4, 4, 4, 4, 2]
-    width: 64
+    blocks: [1, 4, 4, 4, 4, 1]
+    strides: [1, 2, 2, 2, 2, 1]
+    width: 32
     in_channels: 3
     radius: 0.15
     radius_scaling: 1.5
