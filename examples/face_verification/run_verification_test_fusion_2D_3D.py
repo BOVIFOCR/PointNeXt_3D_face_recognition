@@ -57,8 +57,8 @@ class LateFusionVerificationTester(VerificationTester):
 
         train_cache, train_pair_labels, test_cache, test_pair_labels = self.load_organize_and_subsample_pointclouds(dataset, num_points, verbose=verbose)
 
-        train_distances_3d = self.compute_set_distances(train_cache, verbose=verbose)
-        test_distances_3d = self.compute_set_distances(test_cache, verbose=verbose)
+        train_distances_3d = self.compute_set_distances(model, train_cache, verbose=verbose)
+        test_distances_3d = self.compute_set_distances(model, test_cache, verbose=verbose)
 
         train_distances_fused = self.fuse_scores(train_distances_3d, train_distances_2d)
         test_distances_fused = self.fuse_scores(test_distances_3d, test_distances_2d)
