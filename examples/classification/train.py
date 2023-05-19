@@ -67,6 +67,20 @@ def subsample_pointcloud(points, npoints=1024):
     return points
 
 
+# Bernardo
+def create_dict_results_other_datasets(cfg):
+    best_results_other_datasets = {}
+    for datasetname in cfg.val_other_datasets:
+        best_results_other_datasets[datasetname] = {'train_thresh': 0.0, 'train_acc': 0.0, 'train_tar': 0.0, 'train_far': 0.0, \
+                                                    'test_acc': 0.0,  'test_tar': 0.0,  'test_far': 0.0}   # TAR@FAR
+    return best_results_other_datasets
+
+
+def compare_results_other_datasets(current_results, best_results, metric='train_acc'):
+    if current_results[metric] > best_results[metric]:
+        return True
+    return False
+
 def main(gpu, cfg, profile=False):
     if cfg.distributed:
         if cfg.mp:
@@ -179,6 +193,9 @@ def main(gpu, cfg, profile=False):
                                              )
     logging.info(f"length of training dataset: {len(train_loader.dataset)}")
 
+    # Bernardo
+    best_results_other_datasets = create_dict_results_other_datasets(cfg)
+
     # ===> start training
     val_macc, val_oa, val_accs, best_val, macc_when_best, best_epoch = 0., 0., [], 0., 0., 0
     model.zero_grad()
@@ -205,8 +222,15 @@ def main(gpu, cfg, profile=False):
 
             # Bernardo
             if cfg.val_other_datasets is not None:
-                validate_other_datasets(model, cfg, epoch, writer)
-
+                current_results_other_datasets = validate_other_datasets(model, cfg, epoch, writer, best_results_other_datasets)
+                for datasetname in cfg.val_other_datasets:
+                    metric='train_acc'
+                    is_best_for_dataset = compare_results_other_datasets(current_results_other_datasets[datasetname], best_results_other_datasets[datasetname], metric)
+                    if is_best_for_dataset:
+                        best_results_other_datasets[datasetname] = current_results_other_datasets[datasetname]
+                        save_checkpoint(cfg, model, epoch, optimizer, scheduler,
+                                        additioanl_dict={'best_'+datasetname: best_results_other_datasets[datasetname][metric]},
+                                        is_best=False, is_best_for_dataset=is_best_for_dataset, datasetname=datasetname)
 
         lr = optimizer.param_groups[0]['lr']
         logging.info(f'Epoch {epoch} LR {lr:.6f} '
@@ -228,6 +252,8 @@ def main(gpu, cfg, profile=False):
                             additioanl_dict={'best_val': best_val},
                             is_best=is_best
                             )
+        print('------------------------\n')   # Bernardo
+
     # test the last epoch
     test_macc, test_oa, test_accs, test_cm = validate(model, test_loader, cfg)
     print_cls_results(test_oa, test_macc, test_accs, best_epoch, cfg)
@@ -338,14 +364,23 @@ def validate(model, val_loader, cfg):
 
 
 @torch.no_grad()
-def validate_other_datasets(model, cfg, epoch, writer):
+def validate_other_datasets(model, cfg, epoch, writer, best_results_other_datasets):
+    results_other_datasets = create_dict_results_other_datasets(cfg)
     verificationTester = VerificationTester()
     for dataset in cfg.val_other_datasets:
         print(f'Validating on dataset {dataset}...')
-        best_train_tresh, best_train_acc, train_tar, train_far, \
+        train_tresh, train_acc, train_tar, train_far, \
         test_acc, test_tar, test_far = verificationTester.do_verification_test(model, dataset, cfg.num_points, verbose=False)
 
-        print(f'    {dataset} - best_train_tresh:', best_train_tresh, '    best_train_acc:', best_train_acc)
-        writer.add_scalar(f'{dataset}_acc', best_train_acc, epoch)
-        writer.add_scalar(f'{dataset}_treshold', best_train_tresh, epoch)
-    print('\n')
+        # {'train_thresh': 0.0, 'train_acc': 0.0, 'train_tar': 0.0, 'train_far': 0.0}
+        results_other_datasets[dataset]['train_thresh'] = train_tresh
+        results_other_datasets[dataset]['train_acc'] = train_acc
+        results_other_datasets[dataset]['train_tar'] = train_tar
+        results_other_datasets[dataset]['train_far'] = train_far
+
+        print(f'    {dataset} - train_tresh:', train_tresh, '  train_acc:', train_acc,\
+              '    best_train_thresh:', best_results_other_datasets[dataset]['train_thresh'], '  best_train_acc:', best_results_other_datasets[dataset]['train_acc'])
+        writer.add_scalar(f'{dataset}_acc', train_acc, epoch)
+        writer.add_scalar(f'{dataset}_treshold', train_tresh, epoch)
+    print()
+    return results_other_datasets

@@ -60,7 +60,7 @@ def resume_optimizer(cfg, optimizer, pretrained_path=None):
 
 def save_checkpoint(cfg, model, epoch, optimizer=None, scheduler=None,
                     additioanl_dict=None,
-                    is_best=False, post_fix='ckpt_latest', save_name=None, ):
+                    is_best=False, post_fix='ckpt_latest', save_name=None, is_best_for_dataset=False, datasetname='lfw'):
     if save_name is None:
         save_name = cfg.run_name
 
@@ -88,6 +88,13 @@ def save_checkpoint(cfg, model, epoch, optimizer=None, scheduler=None,
         best_pretrained_path = os.path.join(cfg.ckpt_dir, best_ckpt_name)
         shutil.copyfile(current_pretrained_path, best_pretrained_path)
         logging.info("Found the best model and saved in {}".format(best_pretrained_path))
+    
+    # Bernardo
+    if is_best_for_dataset:
+        best_ckpt_name_for_dataset = f'{save_name}_ckpt_best_for_{datasetname}.pth' if save_name else f'ckpt_best_for_{datasetname}.pth'
+        best_pretrained_path_for_dataset = os.path.join(cfg.ckpt_dir, best_ckpt_name_for_dataset)
+        shutil.copyfile(current_pretrained_path, best_pretrained_path_for_dataset)
+        logging.info("Found the best model for dataset \'{}\' and saved in {}".format(datasetname, best_pretrained_path_for_dataset))
 
 
 def resume_checkpoint(config, model, optimizer=None, scheduler=None, pretrained_path=None, printer=logging.info):

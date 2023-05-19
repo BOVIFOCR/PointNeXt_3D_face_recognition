@@ -39,7 +39,7 @@ class MS1MV3_3D(Dataset):
 
         logging.info(f'loading dataset...')
 
-        paths_file_name = 'paths_' + self.DATA_PATH.split('/')[-1] + '_min-samples=' + str(min_samples) + '_max-samples=' + str(max_samples) + 'file-ext=\'' + file_ext + '\'.pkl'
+        paths_file_name = 'paths_' + self.DATA_PATH.split('/')[-1] + '_min-samples=' + str(min_samples) + '_max-samples=' + str(max_samples) + '_file-ext=\'' + file_ext + '\'.pkl'
         path_paths_file = self.DATA_PATH + '/' + paths_file_name
 
         if not os.path.isfile(path_paths_file):
