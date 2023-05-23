@@ -71,12 +71,11 @@ def subsample_pointcloud(points, npoints=1024):
 def create_dict_results_other_datasets(cfg):
     best_results_other_datasets = {}
     for datasetname in cfg.val_other_datasets:
-        best_results_other_datasets[datasetname] = {'train_thresh': 0.0, 'train_acc': 0.0, 'train_tar': 0.0, 'train_far': 0.0, \
-                                                    'test_acc': 0.0,  'test_tar': 0.0,  'test_far': 0.0}   # TAR@FAR
+        best_results_other_datasets[datasetname] = {'acc_mean': 0.0, 'acc_std': 0.0}
     return best_results_other_datasets
 
 
-def compare_results_other_datasets(current_results, best_results, metric='train_acc'):
+def result_is_best_for_dataset(current_results, best_results, metric='acc_mean'):
     if current_results[metric] > best_results[metric]:
         return True
     return False
@@ -224,8 +223,8 @@ def main(gpu, cfg, profile=False):
             if cfg.val_other_datasets is not None:
                 current_results_other_datasets = validate_other_datasets(model, cfg, epoch, writer, best_results_other_datasets)
                 for datasetname in cfg.val_other_datasets:
-                    metric='train_acc'
-                    is_best_for_dataset = compare_results_other_datasets(current_results_other_datasets[datasetname], best_results_other_datasets[datasetname], metric)
+                    metric='acc_mean'
+                    is_best_for_dataset = result_is_best_for_dataset(current_results_other_datasets[datasetname], best_results_other_datasets[datasetname], metric)
                     if is_best_for_dataset:
                         best_results_other_datasets[datasetname] = current_results_other_datasets[datasetname]
                         save_checkpoint(cfg, model, epoch, optimizer, scheduler,
@@ -369,18 +368,14 @@ def validate_other_datasets(model, cfg, epoch, writer, best_results_other_datase
     verificationTester = VerificationTester()
     for dataset in cfg.val_other_datasets:
         print(f'Validating on dataset {dataset}...')
-        train_tresh, train_acc, train_tar, train_far, \
-        test_acc, test_tar, test_far = verificationTester.do_verification_test(model, dataset, cfg.num_points, verbose=False)
+        acc_mean, acc_std = verificationTester.do_verification_test(model, dataset, cfg.num_points, verbose=False)
 
-        # {'train_thresh': 0.0, 'train_acc': 0.0, 'train_tar': 0.0, 'train_far': 0.0}
-        results_other_datasets[dataset]['train_thresh'] = train_tresh
-        results_other_datasets[dataset]['train_acc'] = train_acc
-        results_other_datasets[dataset]['train_tar'] = train_tar
-        results_other_datasets[dataset]['train_far'] = train_far
+        # {'acc_mean': 0.0, 'acc_std': 0.0}
+        results_other_datasets[dataset]['acc_mean'] = acc_mean
+        results_other_datasets[dataset]['acc_std'] = acc_std
 
-        print(f'    {dataset} - train_tresh:', train_tresh, '  train_acc:', train_acc,\
-              '    best_train_thresh:', best_results_other_datasets[dataset]['train_thresh'], '  best_train_acc:', best_results_other_datasets[dataset]['train_acc'])
-        writer.add_scalar(f'{dataset}_acc', train_acc, epoch)
-        writer.add_scalar(f'{dataset}_treshold', train_tresh, epoch)
+        print(f'    {dataset} - acc_mean:', acc_mean, '  acc_std:', acc_std, ' -  best_acc_mean:', best_results_other_datasets[dataset]['acc_mean'])
+        writer.add_scalar(f'{dataset}_acc', acc_mean, epoch)
+
     print()
     return results_other_datasets

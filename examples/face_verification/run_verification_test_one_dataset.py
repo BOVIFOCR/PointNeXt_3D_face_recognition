@@ -12,6 +12,9 @@ from openpoints.models import build_model_from_cfg
 from openpoints.models.layers import furthest_point_sample, fps
 from openpoints.utils import set_random_seed, save_checkpoint, load_checkpoint, resume_checkpoint, setup_logger_dist, cal_model_parm_nums, Wandb
 from openpoints.utils import EasyConfig
+from sklearn.model_selection import KFold
+import sklearn
+from scipy import interpolate
 
 try:
     from .dataloaders.lfw_pairs_3Dreconstructed_MICA import LFW_Pairs_3DReconstructedMICA
@@ -31,12 +34,24 @@ def parse_args():
     return args, opts
 
 
+class LFold:
+    def __init__(self, n_splits=2, shuffle=False):
+        self.n_splits = n_splits
+        if self.n_splits > 1:
+            self.k_fold = KFold(n_splits=n_splits, shuffle=shuffle)
+
+    def split(self, indices):
+        if self.n_splits > 1:
+            return self.k_fold.split(indices)
+        else:
+            return [(indices, indices)]
+
+
 class VerificationTester:
     
     def __init__(self):
         self.LFW_POINT_CLOUDS = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/lfw'
-        self.LFW_TRAIN_VERIF_PAIRS_LIST = '/datasets1/bjgbiesseck/lfw/pairs.txt'        # train-val set (6000 face pairs)
-        self.LFW_TEST_VERIF_PAIRS_LIST = '/datasets1/bjgbiesseck/lfw/pairsDevTest.txt'  # test set      (1000 face pairs)
+        self.LFW_BENCHMARK_VERIF_PAIRS_LIST = '/datasets1/bjgbiesseck/lfw/pairs.txt'        # benchmark test set (6000 face pairs)
 
         self.MLFW_POINT_CLOUDS = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MLFW'
         # MLFW_VERIF_PAIRS_LIST = '/datasets1/bjgbiesseck/MLFW/pairs.txt'
@@ -103,8 +118,7 @@ class VerificationTester:
     def load_dataset(self, dataset_name='lfw', verbose=True):
         if dataset_name.upper() == 'LFW':
             file_ext = 'mesh_centralized-nosetip_with-normals_filter-radius=100.npy'
-            all_train_pairs_paths_label, pos_pair_label, neg_pair_label = LFW_Pairs_3DReconstructedMICA().load_pointclouds_pairs_with_labels(self.LFW_POINT_CLOUDS, self.LFW_TRAIN_VERIF_PAIRS_LIST, file_ext)
-            all_test_pairs_paths_label, pos_pair_label, neg_pair_label = LFW_Pairs_3DReconstructedMICA().load_pointclouds_pairs_with_labels(self.LFW_POINT_CLOUDS, self.LFW_TEST_VERIF_PAIRS_LIST, file_ext)
+            all_pairs_paths_label, folds_indexes, pos_pair_label, neg_pair_label = LFW_Pairs_3DReconstructedMICA().load_pointclouds_pairs_with_labels(self.LFW_POINT_CLOUDS, self.LFW_BENCHMARK_VERIF_PAIRS_LIST, file_ext)
 
             if verbose:
                 # print('\nLFW_Pairs_3DReconstructedMICA - load_pointclouds_pairs_with_labels')
@@ -113,18 +127,15 @@ class VerificationTester:
                 # print('pos_pair_label:', pos_pair_label)
                 # print('neg_pair_label:', neg_pair_label)
                 print('Loading dataset:', dataset_name)
-        
-            train_set = self.load_point_clouds_from_disk(all_train_pairs_paths_label, verbose=verbose)
-            test_set = self.load_point_clouds_from_disk(all_test_pairs_paths_label, verbose=verbose)
 
-            train_pair_labels = [int(train_set[i][2]) for i in range(len(train_set))]   # train_set[j] is (pc0, pc1, pair_label)
-            test_pair_labels = [int(test_set[i][2]) for i in range(len(test_set))]      # test_set[j] is  (pc0, pc1, pair_label)
-        
+            folds_pair_data = self.load_point_clouds_from_disk(all_pairs_paths_label, verbose=verbose)
+            folds_pair_labels = np.array([int(folds_pair_data[i][2]) for i in range(len(folds_pair_data))])   # folds_data[i] is (pc0, pc1, pair_label)
+            
         else:
             print(f'\nError: dataloader for dataset \'{dataset_name}\' not implemented!\n')
             sys.exit(0)
 
-        return train_set, train_pair_labels, test_set, test_pair_labels
+        return folds_pair_data, folds_pair_labels, folds_indexes
 
 
     def subsample_point_cloud(self, points, npoints=1024):
@@ -331,12 +342,11 @@ class VerificationTester:
 
     def load_organize_and_subsample_pointclouds(self, dataset='LFW', num_points=1200, verbose=True):
         # Load test dataset
-        train_set, train_pair_labels, test_set, test_pair_labels = self.load_dataset(dataset_name=dataset, verbose=verbose)
+        folds_pair_data, folds_pair_labels, folds_indexes = self.load_dataset(dataset_name=dataset, verbose=verbose)
 
-        train_cache = self.organize_and_subsample_pointcloud(train_set, npoints=num_points, verbose=verbose)
-        test_cache = self.organize_and_subsample_pointcloud(test_set, npoints=num_points, verbose=verbose)
-
-        return train_cache, train_pair_labels, test_cache, test_pair_labels
+        folds_pair_cache = self.organize_and_subsample_pointcloud(folds_pair_data, npoints=num_points, verbose=verbose)
+        
+        return folds_pair_cache, folds_pair_labels, folds_indexes
 
 
     def find_best_treshold_train_eval_test_set(self, train_distances, train_pair_labels, test_distances, test_pair_labels, verbose=True):
@@ -351,6 +361,119 @@ class VerificationTester:
         return best_train_tresh, best_train_acc, train_tar, train_far, test_acc, test_tar, test_far, test_tp, test_fp, test_tn, test_fn
 
 
+    def calculate_accuracy(self, threshold, dist, actual_issame):
+        predict_issame = np.less(dist, threshold)
+        tp = np.sum(np.logical_and(predict_issame, actual_issame))
+        fp = np.sum(np.logical_and(predict_issame, np.logical_not(actual_issame)))
+        tn = np.sum(
+            np.logical_and(np.logical_not(predict_issame),
+                        np.logical_not(actual_issame)))
+        fn = np.sum(np.logical_and(np.logical_not(predict_issame), actual_issame))
+
+        tpr = 0 if (tp + fn == 0) else float(tp) / float(tp + fn)
+        fpr = 0 if (fp + tn == 0) else float(fp) / float(fp + tn)
+        acc = float(tp + tn) / dist.size
+        return tpr, fpr, acc
+
+
+    # def calculate_roc(self, thresholds, embeddings1, embeddings2, actual_issame, nrof_folds=10, pca=0):
+    def calculate_roc(self, thresholds, dist, actual_issame, nrof_folds=10, verbose=True):
+        # assert (embeddings1.shape[0] == embeddings2.shape[0])
+        # assert (embeddings1.shape[1] == embeddings2.shape[1])
+        assert (dist.shape[0] == actual_issame.shape[0])   # Bernardo
+        nrof_pairs = min(len(actual_issame), dist.shape[0])
+        nrof_thresholds = len(thresholds)
+        k_fold = LFold(n_splits=nrof_folds, shuffle=False)
+
+        tprs = np.zeros((nrof_folds, nrof_thresholds))
+        fprs = np.zeros((nrof_folds, nrof_thresholds))
+        accuracy = np.zeros((nrof_folds))
+        indices = np.arange(nrof_pairs)
+
+        for fold_idx, (train_set, test_set) in enumerate(k_fold.split(indices)):
+            if verbose:
+                print(f'calculate_roc - fold_idx: {fold_idx}/{nrof_folds-1}')
+
+            # Find the best threshold for the fold
+            acc_train = np.zeros((nrof_thresholds))
+            for threshold_idx, threshold in enumerate(thresholds):            
+                _, _, acc_train[threshold_idx] = self.calculate_accuracy(
+                    threshold, dist[train_set], actual_issame[train_set])
+            best_threshold_index = np.argmax(acc_train)
+            for threshold_idx, threshold in enumerate(thresholds):
+                tprs[fold_idx, threshold_idx], fprs[fold_idx, threshold_idx], _ = self.calculate_accuracy(
+                    threshold, dist[test_set],
+                    actual_issame[test_set])
+            _, _, accuracy[fold_idx] = self.calculate_accuracy(
+                thresholds[best_threshold_index], dist[test_set],
+                actual_issame[test_set])
+
+        tpr = np.mean(tprs, 0)
+        fpr = np.mean(fprs, 0)
+        return tpr, fpr, accuracy
+
+
+    def calculate_val_far(self, threshold, dist, actual_issame):
+        predict_issame = np.less(dist, threshold)
+        true_accept = np.sum(np.logical_and(predict_issame, actual_issame))
+        false_accept = np.sum(
+            np.logical_and(predict_issame, np.logical_not(actual_issame)))
+        n_same = np.sum(actual_issame)
+        n_diff = np.sum(np.logical_not(actual_issame))
+        val = float(true_accept) / float(n_same)
+        far = float(false_accept) / float(n_diff)
+        return val, far
+
+
+    # def calculate_val(thresholds, embeddings1, embeddings2, actual_issame, far_target, nrof_folds=10):
+    def calculate_val(self, thresholds, dist, actual_issame, far_target, nrof_folds=10, verbose=True):
+        # assert (embeddings1.shape[0] == embeddings2.shape[0])
+        # assert (embeddings1.shape[1] == embeddings2.shape[1])
+        nrof_pairs = min(len(actual_issame), dist.shape[0])
+        nrof_thresholds = len(thresholds)
+        k_fold = LFold(n_splits=nrof_folds, shuffle=False)
+
+        val = np.zeros(nrof_folds)
+        far = np.zeros(nrof_folds)
+
+        # diff = np.subtract(embeddings1, embeddings2)
+        # dist = np.sum(np.square(diff), 1)
+        indices = np.arange(nrof_pairs)
+
+        for fold_idx, (train_set, test_set) in enumerate(k_fold.split(indices)):
+            if verbose:
+                print(f'calculate_val - fold_idx: {fold_idx}/{nrof_folds-1}')
+
+            # Find the threshold that gives FAR = far_target
+            far_train = np.zeros(nrof_thresholds)
+            for threshold_idx, threshold in enumerate(thresholds):
+                _, far_train[threshold_idx] = self.calculate_val_far(
+                    threshold, dist[train_set], actual_issame[train_set])
+            if np.max(far_train) >= far_target:
+                f = interpolate.interp1d(far_train, thresholds, kind='slinear')
+                threshold = f(far_target)
+            else:
+                threshold = 0.0
+
+            val[fold_idx], far[fold_idx] = self.calculate_val_far(
+                threshold, dist[test_set], actual_issame[test_set])
+
+        val_mean = np.mean(val)
+        far_mean = np.mean(far)
+        val_std = np.std(val)
+        return val_mean, val_std, far_mean
+
+
+    def do_k_fold_test(self, folds_pair_distances, folds_pair_labels, folds_indexes, verbose=True):
+        thresholds = np.arange(0, 4, 0.01)
+        tpr, fpr, accuracy = self.calculate_roc(thresholds, folds_pair_distances, folds_pair_labels, nrof_folds=10, verbose=verbose)
+
+        thresholds = np.arange(0, 4, 0.001)
+        val, val_std, far = self.calculate_val(thresholds, folds_pair_distances, folds_pair_labels, far_target=1e-3, nrof_folds=10, verbose=verbose)
+
+        return tpr, fpr, accuracy, val, val_std, far
+
+
     def do_verification_test(self, model, dataset='LFW', num_points=1200, verbose=True):
         model.eval()
 
@@ -358,16 +481,16 @@ class VerificationTester:
         # path_point_cloud = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_reduced/m.0ql2bgg/0-FaceId-0/mesh_centralized-nosetip_with-normals_filter-radius=100.npy'
         # points = load_one_point_cloud(path_point_cloud)
 
-        train_cache, train_pair_labels, test_cache, test_pair_labels = self.load_organize_and_subsample_pointclouds(dataset, num_points, verbose=verbose)
+        folds_pair_cache, folds_pair_labels, folds_indexes = self.load_organize_and_subsample_pointclouds(dataset, num_points, verbose=verbose)
 
-        train_distances = self.compute_set_distances(model, train_cache, verbose=verbose)
-        test_distances = self.compute_set_distances(model, test_cache, verbose=verbose)
+        folds_pair_distances = self.compute_set_distances(model, folds_pair_cache, verbose=verbose)
+        folds_pair_distances = folds_pair_distances.cpu().detach().numpy()
 
-        best_train_tresh, best_train_acc, train_tar, train_far, \
-            test_acc, test_tar, test_far, test_tp, test_fp, test_tn, test_fn = self.find_best_treshold_train_eval_test_set(train_distances, train_pair_labels, test_distances, test_pair_labels, verbose=verbose)
-
-        return best_train_tresh, best_train_acc, train_tar, train_far, \
-                test_acc, test_tar, test_far
+        _, _, accuracy, val, val_std, far = self.do_k_fold_test(folds_pair_distances, folds_pair_labels, folds_indexes, verbose=verbose)
+        acc_mean, acc_std = np.mean(accuracy), np.std(accuracy)
+        # print(f'acc_mean={acc_mean},    acc_std={acc_std}')
+        
+        return acc_mean, acc_std
 
 
 
@@ -391,9 +514,7 @@ if __name__ == "__main__":
     model, best_epoch, metrics = verif_tester.load_trained_weights_from_cfg_file(model, args.cfg)
     model.eval()
 
-    best_train_tresh, best_train_acc, train_tar, train_far, \
-    test_acc, test_tar, test_far = verif_tester.do_verification_test(model, args.dataset, args.num_points, verbose=True)
-    
-    print('\nFinal - dataset: %s  -  (best_train_tresh: %.6f    best_train_acc: %.6f)    (train_tar: %.6f    train_far: %.10f)' % (args.dataset, best_train_tresh, best_train_acc, train_tar, train_far))
-    print('                         (used_tresh: %.6f    test_acc: %.6f    test_tar: %.6f    test_far: %.10f)' % (best_train_tresh, test_acc, test_tar, test_far))
+    acc_mean, acc_std = verif_tester.do_verification_test(model, args.dataset, args.num_points, verbose=True)
+
+    print('\nFinal - dataset: %s  -  acc_mean: %.6f    acc_std: %.6f)' % (args.dataset, acc_mean, acc_std))
     print('Finished!')
