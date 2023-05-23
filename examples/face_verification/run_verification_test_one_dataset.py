@@ -340,7 +340,7 @@ class VerificationTester:
             return distances
 
 
-    def load_organize_and_subsample_pointclouds(self, dataset='LFW', num_points=1200, verbose=True):
+    def load_organize_and_subsample_pointclouds(self, dataset='LFW', num_points=2048, verbose=True):
         # Load test dataset
         folds_pair_data, folds_pair_labels, folds_indexes = self.load_dataset(dataset_name=dataset, verbose=verbose)
 
@@ -468,13 +468,19 @@ class VerificationTester:
         thresholds = np.arange(0, 4, 0.01)
         tpr, fpr, accuracy = self.calculate_roc(thresholds, folds_pair_distances, folds_pair_labels, nrof_folds=10, verbose=verbose)
 
+        if verbose:
+            print('------------')
+
         thresholds = np.arange(0, 4, 0.001)
         val, val_std, far = self.calculate_val(thresholds, folds_pair_distances, folds_pair_labels, far_target=1e-3, nrof_folds=10, verbose=verbose)
+
+        if verbose:
+            print('------------')
 
         return tpr, fpr, accuracy, val, val_std, far
 
 
-    def do_verification_test(self, model, dataset='LFW', num_points=1200, verbose=True):
+    def do_verification_test(self, model, dataset='LFW', num_points=2048, verbose=True):
         model.eval()
 
         # # Load one point cloud (test)
