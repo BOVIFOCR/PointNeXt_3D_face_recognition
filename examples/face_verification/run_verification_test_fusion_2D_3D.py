@@ -44,10 +44,10 @@ class LateFusionVerificationTester(VerificationTester):
 
         distances_fused = self.fuse_scores(folds_pair_distances, distances_pairs_2d)
 
-        _, _, accuracy, val, val_std, far = self.do_k_fold_test(distances_fused, folds_pair_labels, folds_indexes, verbose=verbose)
+        tpr, fpr, accuracy, tar_mean, tar_std, far_mean = self.do_k_fold_test(distances_fused, folds_pair_labels, folds_indexes, verbose=verbose)
         acc_mean, acc_std = np.mean(accuracy), np.std(accuracy)
 
-        return acc_mean, acc_std
+        return acc_mean, acc_std, tar_mean, tar_std, far_mean
 
 
 
@@ -78,7 +78,7 @@ if __name__ == "__main__":
     # sys.exit(0)
 
     # Do fused verification test
-    acc_mean, acc_std = late_fusion_verif_tester.do_fusion_verification_test(model, args.dataset, args.num_points, distances_pairs_2d, args.batch, verbose=True)
+    acc_mean, acc_std, tar, tar_std, far = late_fusion_verif_tester.do_fusion_verification_test(model, args.dataset, args.num_points, distances_pairs_2d, args.batch, verbose=True)
 
-    print('\nFinal - dataset: %s  -  acc_mean: %.6f    acc_std: %.6f)' % (args.dataset, acc_mean, acc_std))
+    print('\nFinal - dataset: %s  -  acc_mean: %.6f ± %.6f  -  tar: %.6f ± %.6f    far: %.6f)' % (args.dataset, acc_mean, acc_std, tar, tar_std, far))
     print('Finished!')

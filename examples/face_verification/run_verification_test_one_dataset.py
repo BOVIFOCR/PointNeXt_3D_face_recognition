@@ -30,7 +30,7 @@ def parse_args():
     parser.add_argument('--cfg', type=str, required=False, help='config file', default='log/ms1mv3_3d_arcface/ms1mv3_3d_arcface-train-pointnext-s_arcface-ngpus1-seed6113-20230503-171328-SW2CTnmUDWBMoaVuSp4a4v/pointnext-s_arcface.yaml')
     parser.add_argument('--dataset', type=str, default='lfw', help='dataset name')
     parser.add_argument('--num_points', type=int, default=2048, help='number of points to subsample')
-    parser.add_argument('--batch', type=int, default=32, help='batch size to compute face embeddings')
+    parser.add_argument('--batch', type=int, default=16, help='batch size to compute face embeddings')
 
     # FOR FUSION TESTS
     parser.add_argument('--arcdists', type=str, default='/datasets1/bjgbiesseck/MS-Celeb-1M/faces_emore/lfw_distances_arcface=1000class_acc=0.93833.npy', help='dataset name')
@@ -134,10 +134,10 @@ class VerificationTester:
         else:
             print(f'\nError: dataloader for dataset \'{dataset_name}\' not implemented!\n')
             sys.exit(0)
-        
+
         if verbose:
             print('Loading dataset:', dataset_name)
-        
+
         folds_pair_data = self.load_point_clouds_from_disk(all_pairs_paths_label, verbose=verbose)
         folds_pair_labels = np.array([int(folds_pair_data[i][2]) for i in range(len(folds_pair_data))])   # folds_data[i] is (pc0, pc1, pair_label)
 
@@ -418,28 +418,27 @@ class VerificationTester:
         fpr = np.mean(fprs, 0)
         return tpr, fpr, accuracy
 
-
-    def calculate_val_far(self, threshold, dist, actual_issame):
+    # Same as 'calculate_val_far()' of insightface - https://github.com/deepinsight/insightface/blob/master/recognition/arcface_torch/eval/verification.py#L165
+    def calculate_tar_far(self, threshold, dist, actual_issame):
         predict_issame = np.less(dist, threshold)
         true_accept = np.sum(np.logical_and(predict_issame, actual_issame))
         false_accept = np.sum(
             np.logical_and(predict_issame, np.logical_not(actual_issame)))
         n_same = np.sum(actual_issame)
         n_diff = np.sum(np.logical_not(actual_issame))
-        val = float(true_accept) / float(n_same)
+        tar = float(true_accept) / float(n_same)
         far = float(false_accept) / float(n_diff)
-        return val, far
+        return tar, far
 
-
-    # def calculate_val(thresholds, embeddings1, embeddings2, actual_issame, far_target, nrof_folds=10):
-    def calculate_val(self, thresholds, dist, actual_issame, far_target, nrof_folds=10, verbose=True):
+    # Same as 'calculate_val()' of insightface - https://github.com/deepinsight/insightface/blob/master/recognition/arcface_torch/eval/verification.py#L124
+    def calculate_tar(self, thresholds, dist, actual_issame, far_target, nrof_folds=10, verbose=True):
         # assert (embeddings1.shape[0] == embeddings2.shape[0])
         # assert (embeddings1.shape[1] == embeddings2.shape[1])
         nrof_pairs = min(len(actual_issame), dist.shape[0])
         nrof_thresholds = len(thresholds)
         k_fold = LFold(n_splits=nrof_folds, shuffle=False)
 
-        val = np.zeros(nrof_folds)
+        tar = np.zeros(nrof_folds)
         far = np.zeros(nrof_folds)
 
         # diff = np.subtract(embeddings1, embeddings2)
@@ -448,12 +447,12 @@ class VerificationTester:
 
         for fold_idx, (train_set, test_set) in enumerate(k_fold.split(indices)):
             if verbose:
-                print(f'calculate_val - fold_idx: {fold_idx}/{nrof_folds-1}')
+                print(f'calculate_tar - fold_idx: {fold_idx}/{nrof_folds-1}')
 
             # Find the threshold that gives FAR = far_target
             far_train = np.zeros(nrof_thresholds)
             for threshold_idx, threshold in enumerate(thresholds):
-                _, far_train[threshold_idx] = self.calculate_val_far(
+                _, far_train[threshold_idx] = self.calculate_tar_far(
                     threshold, dist[train_set], actual_issame[train_set])
             if np.max(far_train) >= far_target:
                 f = interpolate.interp1d(far_train, thresholds, kind='slinear')
@@ -461,13 +460,13 @@ class VerificationTester:
             else:
                 threshold = 0.0
 
-            val[fold_idx], far[fold_idx] = self.calculate_val_far(
+            tar[fold_idx], far[fold_idx] = self.calculate_tar_far(
                 threshold, dist[test_set], actual_issame[test_set])
 
-        val_mean = np.mean(val)
+        tar_mean = np.mean(tar)
         far_mean = np.mean(far)
-        val_std = np.std(val)
-        return val_mean, val_std, far_mean
+        tar_std = np.std(tar)
+        return tar_mean, tar_std, far_mean
 
 
     def do_k_fold_test(self, folds_pair_distances, folds_pair_labels, folds_indexes, verbose=True):
@@ -478,12 +477,12 @@ class VerificationTester:
             print('------------')
 
         thresholds = np.arange(0, 4, 0.001)
-        val, val_std, far = self.calculate_val(thresholds, folds_pair_distances, folds_pair_labels, far_target=1e-3, nrof_folds=10, verbose=verbose)
+        tar_mean, tar_std, far_mean = self.calculate_tar(thresholds, folds_pair_distances, folds_pair_labels, far_target=1e-3, nrof_folds=10, verbose=verbose)
 
         if verbose:
             print('------------')
 
-        return tpr, fpr, accuracy, val, val_std, far
+        return tpr, fpr, accuracy, tar_mean, tar_std, far_mean
 
 
     def do_verification_test(self, model, dataset='LFW', num_points=2048, batch_size=32, verbose=True):
@@ -498,11 +497,11 @@ class VerificationTester:
         folds_pair_distances = self.compute_set_distances(model, folds_pair_cache, batch_size, verbose=verbose)
         folds_pair_distances = folds_pair_distances.cpu().detach().numpy()
 
-        _, _, accuracy, val, val_std, far = self.do_k_fold_test(folds_pair_distances, folds_pair_labels, folds_indexes, verbose=verbose)
+        tpr, fpr, accuracy, tar_mean, tar_std, far_mean = self.do_k_fold_test(folds_pair_distances, folds_pair_labels, folds_indexes, verbose=verbose)
         acc_mean, acc_std = np.mean(accuracy), np.std(accuracy)
         # print(f'acc_mean={acc_mean},    acc_std={acc_std}')
         
-        return acc_mean, acc_std
+        return acc_mean, acc_std, tar_mean, tar_std, far_mean
 
 
 
@@ -526,7 +525,7 @@ if __name__ == "__main__":
     model, best_epoch, metrics = verif_tester.load_trained_weights_from_cfg_file(model, args.cfg)
     model.eval()
 
-    acc_mean, acc_std = verif_tester.do_verification_test(model, args.dataset, args.num_points, args.batch, verbose=True)
+    acc_mean, acc_std, tar, tar_std, far = verif_tester.do_verification_test(model, args.dataset, args.num_points, args.batch, verbose=True)
 
-    print('\nFinal - dataset: %s  -  acc_mean: %.6f    acc_std: %.6f)' % (args.dataset, acc_mean, acc_std))
+    print('\nFinal - dataset: %s  -  acc_mean: %.6f ± %.6f  -  tar: %.6f ± %.6f    far: %.6f)' % (args.dataset, acc_mean, acc_std, tar, tar_std, far))
     print('Finished!')

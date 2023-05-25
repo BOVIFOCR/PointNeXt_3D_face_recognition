@@ -368,13 +368,13 @@ def validate_other_datasets(model, cfg, epoch, writer, best_results_other_datase
     verificationTester = VerificationTester()
     for dataset in cfg.val_other_datasets:
         print(f'Validating on dataset {dataset}...')
-        acc_mean, acc_std = verificationTester.do_verification_test(model, dataset, cfg.num_points, verbose=False)
+        acc_mean, acc_std, tar, tar_std, far = verificationTester.do_verification_test(model, dataset, cfg.num_points, verbose=False)
 
         # {'acc_mean': 0.0, 'acc_std': 0.0}
         results_other_datasets[dataset]['acc_mean'] = acc_mean
         results_other_datasets[dataset]['acc_std'] = acc_std
 
-        print(f'    {dataset} - acc_mean:', acc_mean, '  acc_std:', acc_std, ' -  best_acc_mean:', best_results_other_datasets[dataset]['acc_mean'])
+        print('    %s - acc_mean: %.6f ± %.6f  -  best_acc_mean: %.6f  -  tar: %.6f ± %.6f    far: %.6f' % (dataset, acc_mean, acc_std, best_results_other_datasets[dataset]['acc_mean'], tar, tar_std, far))
         writer.add_scalar(f'{dataset}_acc', acc_mean, epoch)
 
     print()
