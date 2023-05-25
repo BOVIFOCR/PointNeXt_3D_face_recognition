@@ -18,17 +18,23 @@ from scipy import interpolate
 
 try:
     from .dataloaders.lfw_pairs_3Dreconstructed_MICA import LFW_Pairs_3DReconstructedMICA
+    from .dataloaders.mlfw_pairs_3Dreconstructed_MICA import MLFW_Pairs_3DReconstructedMICA
 except ImportError as e:
     from dataloaders.lfw_pairs_3Dreconstructed_MICA import LFW_Pairs_3DReconstructedMICA
+    from dataloaders.mlfw_pairs_3Dreconstructed_MICA import MLFW_Pairs_3DReconstructedMICA
 
 
 
 def parse_args():
     parser = argparse.ArgumentParser('run_verification_test.py')
-    parser.add_argument('--cfg', type=str, required=True, help='config file')
+    parser.add_argument('--cfg', type=str, required=False, help='config file', default='log/ms1mv3_3d_arcface/ms1mv3_3d_arcface-train-pointnext-s_arcface-ngpus1-seed6113-20230503-171328-SW2CTnmUDWBMoaVuSp4a4v/pointnext-s_arcface.yaml')
     parser.add_argument('--dataset', type=str, default='lfw', help='dataset name')
     parser.add_argument('--num_points', type=int, default=2048, help='number of points to subsample')
-    # parser.add_argument('--pretrained', type=str, required=True, help='checkpoint_file.pth')
+    parser.add_argument('--batch', type=int, default=32, help='batch size to compute face embeddings')
+
+    # FOR FUSION TESTS
+    parser.add_argument('--arcdists', type=str, default='/datasets1/bjgbiesseck/MS-Celeb-1M/faces_emore/lfw_distances_arcface=1000class_acc=0.93833.npy', help='dataset name')
+
     parser.add_argument('--profile', action='store_true', default=False, help='set to True to profile speed')
     args, opts = parser.parse_known_args()
     return args, opts
@@ -53,8 +59,8 @@ class VerificationTester:
         self.LFW_POINT_CLOUDS = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/lfw'
         self.LFW_BENCHMARK_VERIF_PAIRS_LIST = '/datasets1/bjgbiesseck/lfw/pairs.txt'        # benchmark test set (6000 face pairs)
 
-        self.MLFW_POINT_CLOUDS = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MLFW'
-        # MLFW_VERIF_PAIRS_LIST = '/datasets1/bjgbiesseck/MLFW/pairs.txt'
+        self.MLFW_POINT_CLOUDS = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MLFW/origin'
+        self.MLFW_BENCHMARK_VERIF_PAIRS_LIST = '/datasets1/bjgbiesseck/MLFW/pairs.txt'
 
 
     def pc_normalize(self, pc):
@@ -120,20 +126,31 @@ class VerificationTester:
             file_ext = 'mesh_centralized-nosetip_with-normals_filter-radius=100.npy'
             all_pairs_paths_label, folds_indexes, pos_pair_label, neg_pair_label = LFW_Pairs_3DReconstructedMICA().load_pointclouds_pairs_with_labels(self.LFW_POINT_CLOUDS, self.LFW_BENCHMARK_VERIF_PAIRS_LIST, file_ext)
 
-            if verbose:
-                # print('\nLFW_Pairs_3DReconstructedMICA - load_pointclouds_pairs_with_labels')
-                # print('all_pairs_paths_label:', all_pairs_paths_label)
-                # print('len(all_pairs_paths_label):', len(all_pairs_paths_label))
-                # print('pos_pair_label:', pos_pair_label)
-                # print('neg_pair_label:', neg_pair_label)
-                print('Loading dataset:', dataset_name)
+            # if verbose:
+            #     # print('\nLFW_Pairs_3DReconstructedMICA - load_pointclouds_pairs_with_labels')
+            #     # print('all_pairs_paths_label:', all_pairs_paths_label)
+            #     # print('len(all_pairs_paths_label):', len(all_pairs_paths_label))
+            #     # print('pos_pair_label:', pos_pair_label)
+            #     # print('neg_pair_label:', neg_pair_label)
+            #     print('Loading dataset:', dataset_name)
+            #
+            # folds_pair_data = self.load_point_clouds_from_disk(all_pairs_paths_label, verbose=verbose)
+            # folds_pair_labels = np.array([int(folds_pair_data[i][2]) for i in range(len(folds_pair_data))])   # folds_data[i] is (pc0, pc1, pair_label)
+        
+        elif dataset_name.upper() == 'MLFW':
+            # file_ext = 'mesh.ply'
+            file_ext = 'mesh_centralized-nosetip_with-normals_filter-radius=100.npy'
+            all_pairs_paths_label, folds_indexes, pos_pair_label, neg_pair_label = MLFW_Pairs_3DReconstructedMICA().load_pointclouds_pairs_with_labels(self.MLFW_POINT_CLOUDS, self.MLFW_BENCHMARK_VERIF_PAIRS_LIST, file_ext)
 
-            folds_pair_data = self.load_point_clouds_from_disk(all_pairs_paths_label, verbose=verbose)
-            folds_pair_labels = np.array([int(folds_pair_data[i][2]) for i in range(len(folds_pair_data))])   # folds_data[i] is (pc0, pc1, pair_label)
-            
         else:
             print(f'\nError: dataloader for dataset \'{dataset_name}\' not implemented!\n')
             sys.exit(0)
+        
+        if verbose:
+            print('Loading dataset:', dataset_name)
+        
+        folds_pair_data = self.load_point_clouds_from_disk(all_pairs_paths_label, verbose=verbose)
+        folds_pair_labels = np.array([int(folds_pair_data[i][2]) for i in range(len(folds_pair_data))])   # folds_data[i] is (pc0, pc1, pair_label)
 
         return folds_pair_data, folds_pair_labels, folds_indexes
 
@@ -298,13 +315,13 @@ class VerificationTester:
         # return best_tresh, best_acc, tar, desired_far
 
 
-    def compute_set_distances(self, model, cache={}, verbose=True):
+    def compute_set_distances(self, model, cache={}, batch_size=32, verbose=True):
         if verbose:
             print('cache[\'x\'].size():', cache['x'].size())
 
         with torch.no_grad():
             distances = torch.zeros(int(len(cache['x'])/2))
-            batch_size = 64
+            # batch_size = 32
             num_batches = len(cache['x']) // batch_size
             last_batch_size = len(cache['x']) % batch_size
             if last_batch_size > 0: num_batches += 1
@@ -480,7 +497,7 @@ class VerificationTester:
         return tpr, fpr, accuracy, val, val_std, far
 
 
-    def do_verification_test(self, model, dataset='LFW', num_points=2048, verbose=True):
+    def do_verification_test(self, model, dataset='LFW', num_points=2048, batch_size=32, verbose=True):
         model.eval()
 
         # # Load one point cloud (test)
@@ -489,7 +506,7 @@ class VerificationTester:
 
         folds_pair_cache, folds_pair_labels, folds_indexes = self.load_organize_and_subsample_pointclouds(dataset, num_points, verbose=verbose)
 
-        folds_pair_distances = self.compute_set_distances(model, folds_pair_cache, verbose=verbose)
+        folds_pair_distances = self.compute_set_distances(model, folds_pair_cache, batch_size, verbose=verbose)
         folds_pair_distances = folds_pair_distances.cpu().detach().numpy()
 
         _, _, accuracy, val, val_std, far = self.do_k_fold_test(folds_pair_distances, folds_pair_labels, folds_indexes, verbose=verbose)
@@ -520,7 +537,7 @@ if __name__ == "__main__":
     model, best_epoch, metrics = verif_tester.load_trained_weights_from_cfg_file(model, args.cfg)
     model.eval()
 
-    acc_mean, acc_std = verif_tester.do_verification_test(model, args.dataset, args.num_points, verbose=True)
+    acc_mean, acc_std = verif_tester.do_verification_test(model, args.dataset, args.num_points, args.batch, verbose=True)
 
     print('\nFinal - dataset: %s  -  acc_mean: %.6f    acc_std: %.6f)' % (args.dataset, acc_mean, acc_std))
     print('Finished!')

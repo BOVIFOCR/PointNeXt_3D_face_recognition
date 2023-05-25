@@ -13,20 +13,8 @@ from openpoints.models.layers import furthest_point_sample, fps
 from openpoints.utils import set_random_seed, save_checkpoint, load_checkpoint, resume_checkpoint, setup_logger_dist, cal_model_parm_nums, Wandb
 from openpoints.utils import EasyConfig
 
-from run_verification_test_one_dataset import VerificationTester
+from run_verification_test_one_dataset import VerificationTester, parse_args
 
-
-
-def parse_args():
-    parser = argparse.ArgumentParser('run_verification_test_fusion_2D_3D.py')
-    parser.add_argument('--cfg', type=str, required=True, help='config file', default='/home/bjgbiesseck/GitHub/BOVIFOCR_PointNeXt_3D_face_recognition/log/ms1mv3_3d_arcface/ms1mv3_3d_arcface-train-pointnext-s_arcface-ngpus1-seed6113-20230503-171328-SW2CTnmUDWBMoaVuSp4a4v/pointnext-s_arcface.yaml')
-    parser.add_argument('--dataset', type=str, default='lfw', help='dataset name')
-    parser.add_argument('--num_points', type=int, default=2048, help='number of points to subsample')
-    parser.add_argument('--arcdists', type=str, default='/datasets1/bjgbiesseck/MS-Celeb-1M/faces_emore/lfw_distances_arcface=1000class_acc=0.93833.npy', help='dataset name')
-
-    parser.add_argument('--profile', action='store_true', default=False, help='set to True to profile speed')
-    args, opts = parser.parse_known_args()
-    return args, opts
 
 
 class LateFusionVerificationTester(VerificationTester):
@@ -43,7 +31,7 @@ class LateFusionVerificationTester(VerificationTester):
         return final_distances
 
 
-    def do_fusion_verification_test(self, model, dataset='LFW', num_points=2048, distances_pairs_2d=np.array([]), verbose=True):
+    def do_fusion_verification_test(self, model, dataset='LFW', num_points=2048, distances_pairs_2d=np.array([]), batch_size=32, verbose=True):
         model.eval()
 
         # train_distances_2d = distances_pairs_2d['train']
@@ -51,7 +39,7 @@ class LateFusionVerificationTester(VerificationTester):
 
         folds_pair_cache, folds_pair_labels, folds_indexes = self.load_organize_and_subsample_pointclouds(dataset, num_points, verbose=verbose)
 
-        folds_pair_distances = self.compute_set_distances(model, folds_pair_cache, verbose=verbose)
+        folds_pair_distances = self.compute_set_distances(model, folds_pair_cache, batch_size, verbose=verbose)
         folds_pair_distances = folds_pair_distances.cpu().detach().numpy()
 
         distances_fused = self.fuse_scores(folds_pair_distances, distances_pairs_2d)
@@ -90,7 +78,7 @@ if __name__ == "__main__":
     # sys.exit(0)
 
     # Do fused verification test
-    acc_mean, acc_std = late_fusion_verif_tester.do_fusion_verification_test(model, args.dataset, args.num_points, distances_pairs_2d, verbose=True)
+    acc_mean, acc_std = late_fusion_verif_tester.do_fusion_verification_test(model, args.dataset, args.num_points, distances_pairs_2d, args.batch, verbose=True)
 
     print('\nFinal - dataset: %s  -  acc_mean: %.6f    acc_std: %.6f)' % (args.dataset, acc_mean, acc_std))
     print('Finished!')
