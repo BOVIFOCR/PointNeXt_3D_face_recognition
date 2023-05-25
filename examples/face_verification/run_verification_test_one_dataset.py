@@ -126,17 +126,6 @@ class VerificationTester:
             file_ext = 'mesh_centralized-nosetip_with-normals_filter-radius=100.npy'
             all_pairs_paths_label, folds_indexes, pos_pair_label, neg_pair_label = LFW_Pairs_3DReconstructedMICA().load_pointclouds_pairs_with_labels(self.LFW_POINT_CLOUDS, self.LFW_BENCHMARK_VERIF_PAIRS_LIST, file_ext)
 
-            # if verbose:
-            #     # print('\nLFW_Pairs_3DReconstructedMICA - load_pointclouds_pairs_with_labels')
-            #     # print('all_pairs_paths_label:', all_pairs_paths_label)
-            #     # print('len(all_pairs_paths_label):', len(all_pairs_paths_label))
-            #     # print('pos_pair_label:', pos_pair_label)
-            #     # print('neg_pair_label:', neg_pair_label)
-            #     print('Loading dataset:', dataset_name)
-            #
-            # folds_pair_data = self.load_point_clouds_from_disk(all_pairs_paths_label, verbose=verbose)
-            # folds_pair_labels = np.array([int(folds_pair_data[i][2]) for i in range(len(folds_pair_data))])   # folds_data[i] is (pc0, pc1, pair_label)
-        
         elif dataset_name.upper() == 'MLFW':
             # file_ext = 'mesh.ply'
             file_ext = 'mesh_centralized-nosetip_with-normals_filter-radius=100.npy'
