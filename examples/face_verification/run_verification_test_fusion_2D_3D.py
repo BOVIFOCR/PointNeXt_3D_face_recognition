@@ -88,10 +88,14 @@ if __name__ == "__main__":
     model.eval()
 
     # Load 2D distances
-    distances_pairs_2d = np.load(args.arcdists)
-    # distances_pairs_2d = torch.from_numpy(distances_pairs_2d).float().to(0)
-    # print('distances_pairs_2d:', distances_pairs_2d.device)
-    # sys.exit(0)
+    if args.arcdists == 'zero' or args.arcdists == 'zeros':
+        distances_pairs_2d = np.zeros((6000,))
+    elif args.arcdists == 'one' or args.arcdists == 'ones':
+        distances_pairs_2d = np.ones((6000,))
+    elif args.arcdists == 'rand' or args.arcdists == 'random':
+        distances_pairs_2d = np.random.random((6000,))
+    else:
+        distances_pairs_2d = np.load(args.arcdists)
 
     # fusion_methods = ['mean']
     # fusion_methods = ['mean', 'min']
@@ -110,4 +114,4 @@ if __name__ == "__main__":
         far_mean = results_fused[fm]['far_mean']
         print('Final - dataset: %s  -  fusion_method: %s  -  acc_mean: %.6f ± %.6f  -  tar_mean: %.6f ± %.6f    far_mean: %.6f)' % (args.dataset, fm, acc_mean, acc_std, tar_mean, tar_std, far_mean))
 
-    print('Finished!')
+    print('\nFinished!')
