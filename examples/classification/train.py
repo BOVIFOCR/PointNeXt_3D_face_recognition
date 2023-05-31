@@ -69,10 +69,12 @@ def subsample_pointcloud(points, npoints=1024):
 
 # Bernardo
 def create_dict_results_other_datasets(cfg):
-    best_results_other_datasets = {}
-    for datasetname in cfg.val_other_datasets:
-        best_results_other_datasets[datasetname] = {'acc_mean': 0.0, 'acc_std': 0.0}
-    return best_results_other_datasets
+    if cfg.val_other_datasets is not None:
+        best_results_other_datasets = {}
+        for datasetname in cfg.val_other_datasets:
+            best_results_other_datasets[datasetname] = {'acc_mean': 0.0, 'acc_std': 0.0}
+        return best_results_other_datasets
+    return None
 
 
 def result_is_best_for_dataset(current_results, best_results, metric='acc_mean'):
