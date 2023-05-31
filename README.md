@@ -1,10 +1,24 @@
 # BOVIFOCR Instructions for Face Recognition
 
-1. **Clone this repo, install requirements (Python 3.7, Cuda 11.3)**
+1. **Clone this repo, install requirements (Python 3.7, Cuda 11.2 or 11.3)**
    - environment.yml (conda env)
    - requirements.txt (python deps)
 
-2. **Download and extract the micro-dataset "MS1MV3-3D_22_subjects" (MICA facial reconstruction)**:
+2. **Activate your env and set environment variables**:
+   ```
+   conda activate <env_name>
+   export CUDA_HOME="/usr/local/cuda-11.2"
+   export LD_LIBRARY_PATH="$CUDA_HOME/lib64"
+   export PATH="$CUDA_HOME:$CUDA_HOME/bin:$LD_LIBRARY_PATH:$PATH"
+   ```
+
+3. **Run "install.sh" to compile and install C++ libs**:
+   ```
+   chmod u+x install.sh
+   ./install.sh
+   ```
+
+4. **Download and extract the micro-dataset "MS1MV3-3D_22_subjects" (MICA facial reconstruction)**:
    [[MS1MV3-3D 22 subjects (117MB)]](https://drive.google.com/file/d/1dYxdXTBGyaNF_dB4vQ70EhmUgpHe7jcU/view?usp=sharing)
    
    Dataset structure:
@@ -27,7 +41,7 @@
    |   ├── m.0qr_08d
    ```
    
-3. **Config `data_dir` in file** "BOVIFOCR_PointNeXt_3D_face_recognition/cfgs/ms1mv3_3d_arcface/default.yaml":
+5. **Config `data_dir` in file** "BOVIFOCR_PointNeXt_3D_face_recognition/cfgs/ms1mv3_3d_arcface/default.yaml":
    ```
    dataset:
      common:
@@ -35,14 +49,14 @@
        data_dir: '/path/to/MS-Celeb-1M_3D_reconstruction_originalMICA/images_22subj'
    ```
  
-4. **Train PointNeXt**:
+6. **Train PointNeXt**:
 
    ```
    cd BOVIFOCR_PointNeXt_3D_face_recognition
    python examples/classification/main.py --cfg cfgs/ms1mv3_3d_arcface/pointnext-s_arcface.yaml
    ```
 
-5. **Trained models will be saved in** "BOVIFOCR_PointNeXt_3D_face_recognition/log/ms1mv3_3d_arcface"
+7. **Trained models will be saved in** "BOVIFOCR_PointNeXt_3D_face_recognition/log/ms1mv3_3d_arcface"
    
  ----------------------
 
