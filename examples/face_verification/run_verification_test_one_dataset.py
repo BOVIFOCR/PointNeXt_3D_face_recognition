@@ -66,7 +66,7 @@ class VerificationTester:
         # self.LFW_BENCHMARK_VERIF_PAIRS_LIST = '/nobackup/unico/datasets/face_recognition/lfw/pairs.txt'    # benchmark test set (6000 face pairs)
 
 
-        # duo
+        # MLFW - duo
         self.MLFW_POINT_CLOUDS = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MLFW/origin'
         self.MLFW_BENCHMARK_VERIF_PAIRS_LIST = '/datasets1/bjgbiesseck/MLFW/pairs.txt'
 
