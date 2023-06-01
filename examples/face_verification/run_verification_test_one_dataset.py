@@ -23,6 +23,7 @@ except ImportError as e:
     from dataloaders.lfw_pairs_3Dreconstructed_MICA import LFW_Pairs_3DReconstructedMICA
     from dataloaders.mlfw_pairs_3Dreconstructed_MICA import MLFW_Pairs_3DReconstructedMICA
 
+np.random.seed(440)   # Bernardo
 
 
 def parse_args():
@@ -166,7 +167,7 @@ class VerificationTester:
             if  points.size(1) < point_all:
                 point_all = points.size(1)
             fps_idx = furthest_point_sample(points[:, :, :3].contiguous(), point_all)
-            # fps_idx = fps_idx[:, np.random.choice(point_all, npoints, False)]
+            fps_idx = fps_idx[:, np.random.choice(point_all, npoints, False)]
             points = torch.gather(points, 1, fps_idx.unsqueeze(-1).long().expand(-1, -1, points.shape[-1]))
 
         return points
