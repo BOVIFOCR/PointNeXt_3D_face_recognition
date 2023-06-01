@@ -57,13 +57,13 @@ class LFold:
 class VerificationTester:
 
     def __init__(self):
-        # LFW - duo
-        self.LFW_POINT_CLOUDS = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/lfw'
-        self.LFW_BENCHMARK_VERIF_PAIRS_LIST = '/datasets1/bjgbiesseck/lfw/pairs.txt'    # benchmark test set (6000 face pairs)
+        # # LFW - duo
+        # self.LFW_POINT_CLOUDS = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/lfw'
+        # self.LFW_BENCHMARK_VERIF_PAIRS_LIST = '/datasets1/bjgbiesseck/lfw/pairs.txt'    # benchmark test set (6000 face pairs)
 
-        # # LFW - diolkos
-        # self.LFW_POINT_CLOUDS = '/nobackup/unico/datasets/face_recognition/MICA_3Dreconstruction/lfw'
-        # self.LFW_BENCHMARK_VERIF_PAIRS_LIST = '/nobackup/unico/datasets/face_recognition/lfw/pairs.txt'    # benchmark test set (6000 face pairs)
+        # LFW - diolkos
+        self.LFW_POINT_CLOUDS = '/nobackup/unico/datasets/face_recognition/MICA_3Dreconstruction/lfw'
+        self.LFW_BENCHMARK_VERIF_PAIRS_LIST = '/nobackup/unico/datasets/face_recognition/lfw/pairs.txt'    # benchmark test set (6000 face pairs)
 
 
         # MLFW - duo
@@ -406,7 +406,7 @@ class VerificationTester:
 
         for fold_idx, (train_set, test_set) in enumerate(k_fold.split(indices)):
             if verbose:
-                print(f'calculate_roc - fold_idx: {fold_idx}/{nrof_folds-1}')
+                print(f'calculate_roc - fold_idx: {fold_idx}/{nrof_folds-1}', end='\r')
 
             # Find the best threshold for the fold
             acc_train = np.zeros((nrof_thresholds))
@@ -421,6 +421,9 @@ class VerificationTester:
             _, _, accuracy[fold_idx] = self.calculate_accuracy(
                 thresholds[best_threshold_index], dist[test_set],
                 actual_issame[test_set])
+        
+        if verbose:
+            print('')
 
         tpr = np.mean(tprs, 0)
         fpr = np.mean(fprs, 0)
@@ -455,7 +458,7 @@ class VerificationTester:
 
         for fold_idx, (train_set, test_set) in enumerate(k_fold.split(indices)):
             if verbose:
-                print(f'calculate_tar - fold_idx: {fold_idx}/{nrof_folds-1}')
+                print(f'calculate_tar - fold_idx: {fold_idx}/{nrof_folds-1}', end='\r')
 
             # Find the threshold that gives FAR = far_target
             far_train = np.zeros(nrof_thresholds)
@@ -470,6 +473,9 @@ class VerificationTester:
 
             tar[fold_idx], far[fold_idx] = self.calculate_tar_far(
                 threshold, dist[test_set], actual_issame[test_set])
+        
+        if verbose:
+            print('')
 
         tar_mean = np.mean(tar)
         far_mean = np.mean(far)
@@ -480,9 +486,6 @@ class VerificationTester:
     def do_k_fold_test(self, folds_pair_distances, folds_pair_labels, folds_indexes, verbose=True):
         thresholds = np.arange(0, 4, 0.01)
         tpr, fpr, accuracy = self.calculate_roc(thresholds, folds_pair_distances, folds_pair_labels, nrof_folds=10, verbose=verbose)
-
-        if verbose:
-            print('------------')
 
         thresholds = np.arange(0, 4, 0.001)
         tar_mean, tar_std, far_mean = self.calculate_tar(thresholds, folds_pair_distances, folds_pair_labels, far_target=1e-3, nrof_folds=10, verbose=verbose)

@@ -13,7 +13,9 @@ from openpoints.models.layers import furthest_point_sample, fps
 from openpoints.utils import set_random_seed, save_checkpoint, load_checkpoint, resume_checkpoint, setup_logger_dist, cal_model_parm_nums, Wandb
 from openpoints.utils import EasyConfig
 
-from run_verification_test_one_dataset import VerificationTester, parse_args
+from xgboost import XGBClassifier
+
+from run_verification_test_one_dataset import VerificationTester, LFold, parse_args
 
 
 
@@ -21,6 +23,24 @@ class LateFusionVerificationTester(VerificationTester):
 
     def __init__(self):
         super().__init__()
+
+
+    def train_xgboost_classifier(self, X_train, y_train):
+        bst = XGBClassifier(n_estimators=2, max_depth=2, learning_rate=1, objective='binary:logistic')
+        bst.fit(X_train, y_train)
+        return bst
+
+
+    def do_xgboost_fold_test(self, distances_pairs_2d, distances_pairs_3d, folds_pair_labels, nrof_folds, folds_indexes, verbose=True):
+        assert (distances_pairs_2d.shape[0] == distances_pairs_3d.shape[0])
+        nrof_pairs = len(folds_pair_labels)
+        k_fold = LFold(n_splits=nrof_folds, shuffle=False)
+
+        indices = np.arange(nrof_pairs)
+
+        for fold_idx, (train_set, test_set) in enumerate(k_fold.split(indices)):
+            if verbose:
+                print(f'do_xgboost_fold_test - training classifier - fold_idx: {fold_idx}/{nrof_folds-1}')
 
 
     def fuse_scores(self, distances1, distances2, method='mean'):
@@ -43,17 +63,27 @@ class LateFusionVerificationTester(VerificationTester):
 
         folds_pair_cache, folds_pair_labels, folds_indexes = self.load_organize_and_subsample_pointclouds(dataset, num_points, verbose=verbose)
 
-        folds_pair_distances = self.compute_set_distances(model, folds_pair_cache, batch_size, verbose=verbose)
-        folds_pair_distances = folds_pair_distances.cpu().detach().numpy()
+        distances_pairs_3d = self.compute_set_distances(model, folds_pair_cache, batch_size, verbose=verbose)
+        distances_pairs_3d = distances_pairs_3d.cpu().detach().numpy()
 
         distances_fused = {}
         results_fused = {}
         for fm in fusion_methods:
-            # distances_fused = self.fuse_scores(folds_pair_distances, distances_pairs_2d)
-            distances_fused[fm] = self.fuse_scores(folds_pair_distances, distances_pairs_2d, method=fm)
+            if verbose:
+                print(f'Fusion method: {fm}')
 
-            tpr, fpr, accuracy, tar_mean, tar_std, far_mean = self.do_k_fold_test(distances_fused[fm], folds_pair_labels, folds_indexes, verbose=verbose)
-            acc_mean, acc_std = np.mean(accuracy), np.std(accuracy)
+            if fm == 'xgboost':
+                print(f'\ndo_fusion_verification_test - do_fusion_verification_test: fusion method \'{fm}\' not implemented yet')
+                sys.exit(0)
+
+                nrof_folds=10
+                tpr, fpr, accuracy, tar_mean, tar_std, far_mean = self.do_xgboost_fold_test(distances_pairs_2d, distances_pairs_3d, folds_pair_labels, nrof_folds, folds_indexes, verbose=True)
+
+            else:  # for fusion_methods = ['mean', 'min', 'max']
+                distances_fused[fm] = self.fuse_scores(distances_pairs_2d, distances_pairs_3d, method=fm)
+
+                tpr, fpr, accuracy, tar_mean, tar_std, far_mean = self.do_k_fold_test(distances_fused[fm], folds_pair_labels, folds_indexes, verbose=verbose)
+                acc_mean, acc_std = np.mean(accuracy), np.std(accuracy)
 
             results_fused[fm] = {}
             results_fused[fm]['acc_mean'] = acc_mean
@@ -100,6 +130,7 @@ if __name__ == "__main__":
     # fusion_methods = ['mean']
     # fusion_methods = ['mean', 'min']
     fusion_methods = ['mean', 'min', 'max']
+    # fusion_methods = ['xgboost']
 
     # Do fused verification test
     # acc_mean, acc_std, tar, tar_std, far = late_fusion_verif_tester.do_fusion_verification_test(model, args.dataset, args.num_points, distances_pairs_2d, args.batch, verbose=True)
