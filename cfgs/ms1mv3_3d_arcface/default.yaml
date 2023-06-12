@@ -36,18 +36,18 @@ dataset:
   
   train:
     split: train
-    # num_points: 1024  # in training, use sampled 1024 points for data augmentation.
-    num_points: 2048
+    num_points: 1024  # in training, use sampled 1024 points for data augmentation.
+    # num_points: 2048
     # num_points: 2900  # Default value for MS1MV3-3D reconstructed by MICA
   val:
     split: test
-    # num_points: 1024  # in testing, use uniformly pre-sampled 1024 points for evaluation (following https://github.com/lulutang0608/Point-BERT)
-    num_points: 2048
+    num_points: 1024  # in testing, use uniformly pre-sampled 1024 points for evaluation (following https://github.com/lulutang0608/Point-BERT)
+    # num_points: 2048
     # num_points: 2900  # Default value for MS1MV3-3D reconstructed by MICA
 
 # Dataset Related
-# num_points: 1024  # number of poins actually used in training and evaluation
-num_points: 2048
+num_points: 1024  # number of poins actually used in training and evaluation
+# num_points: 2048
 # num_points: 2900  # Default value for MS1MV3-3D reconstructed by MICA
 
 # Bernardo

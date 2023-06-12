@@ -32,6 +32,7 @@ def parse_args():
     parser.add_argument('--dataset', type=str, default='lfw', help='dataset name')
     parser.add_argument('--num_points', type=int, default=2048, help='number of points to subsample')
     parser.add_argument('--batch', type=int, default=16, help='batch size to compute face embeddings')
+    parser.add_argument('--checkpoint_suffix', type=str, default='_ckpt_best.pth', help='end of model weights file')
 
     # FOR FUSION TESTS
     parser.add_argument('--arcdists', type=str, default='/datasets1/bjgbiesseck/MS-Celeb-1M/faces_emore/lfw_distances_arcface=1000class_acc=0.93833.npy', help='dataset name')
@@ -86,10 +87,11 @@ class VerificationTester:
         return pc
 
 
-    def load_trained_weights_from_cfg_file(self, model, cfg_path='log/ms1mv2_3d_arcface/ms1mv2_3d_arcface-train-pointnext-s_arcface-ngpus1-seed6520-20230429-170750-98s4kHjBdbgbRWcegn9V9y/pointnext-s_arcface.yaml'):
+    def load_trained_weights_from_cfg_file(self, model, cfg_path='log/ms1mv2_3d_arcface/ms1mv2_3d_arcface-train-pointnext-s_arcface-ngpus1-seed6520-20230429-170750-98s4kHjBdbgbRWcegn9V9y/pointnext-s_arcface.yaml', checkpoint_suffix='_ckpt_best.pth'):
         # pretrained_path = 'log/ms1mv2_3d_arcface/ms1mv2_3d_arcface-train-pointnext-s_arcface-ngpus1-seed6520-20230429-170750-98s4kHjBdbgbRWcegn9V9y/checkpoint/ms1mv2_3d_arcface-train-pointnext-s_arcface-ngpus1-seed6520-20230429-170750-98s4kHjBdbgbRWcegn9V9y_ckpt_best.pth'
-        file_name = '*_ckpt_best.pth'
+        # file_name = '*_ckpt_best.pth'
         # file_name = '*_ckpt_latest.pth'
+        file_name = '*' + checkpoint_suffix
         pretrained_path = '/'.join(cfg_path.split('/')[:-1]) + '/checkpoint/' + file_name
         full_pretrained_path = glob.glob(pretrained_path)
         if len(full_pretrained_path) > 0:
@@ -538,7 +540,7 @@ if __name__ == "__main__":
     model = build_model_from_cfg(cfg.model).to(0)
 
     # Load trained weights
-    model, best_epoch, metrics = verif_tester.load_trained_weights_from_cfg_file(model, args.cfg)
+    model, best_epoch, metrics = verif_tester.load_trained_weights_from_cfg_file(model, args.cfg, args.checkpoint_suffix)
     model.eval()
 
     acc_mean, acc_std, tar, tar_std, far = verif_tester.do_verification_test(model, args.dataset, args.num_points, args.batch, verbose=True)
