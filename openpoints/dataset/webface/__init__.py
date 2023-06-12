@@ -1,0 +1,5 @@
+from .webface_3d_loader import WEBFACE_3D
+from .webface_3d_1000subj_loader import WEBFACE_3D_1000subj
+from .webface_3d_2000subj_loader import WEBFACE_3D_2000subj
+from .webface_3d_5000subj_loader import WEBFACE_3D_5000subj
+from .webface_3d_10000subj_loader import WEBFACE_3D_10000subj

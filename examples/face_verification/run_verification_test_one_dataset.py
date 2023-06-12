@@ -61,9 +61,14 @@ class VerificationTester:
         # self.LFW_POINT_CLOUDS = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/lfw'
         # self.LFW_BENCHMARK_VERIF_PAIRS_LIST = '/datasets1/bjgbiesseck/lfw/pairs.txt'    # benchmark test set (6000 face pairs)
 
-        # LFW - diolkos
-        self.LFW_POINT_CLOUDS = '/nobackup/unico/datasets/face_recognition/MICA_3Dreconstruction/lfw'
-        self.LFW_BENCHMARK_VERIF_PAIRS_LIST = '/nobackup/unico/datasets/face_recognition/lfw/pairs.txt'    # benchmark test set (6000 face pairs)
+        # # LFW - diolkos
+        # self.LFW_POINT_CLOUDS = '/nobackup/unico/datasets/face_recognition/MICA_3Dreconstruction/lfw'
+        # self.LFW_BENCHMARK_VERIF_PAIRS_LIST = '/nobackup/unico/datasets/face_recognition/lfw/pairs.txt'    # benchmark test set (6000 face pairs)
+
+        # LFW - peixoto
+        self.LFW_POINT_CLOUDS = '/nobackup1/bjgbiesseck/datasets/MICA_3Dreconstruction/lfw'
+        self.LFW_BENCHMARK_VERIF_PAIRS_LIST = '/nobackup1/bjgbiesseck/datasets/MICA_3Dreconstruction/lfw/pairs.txt'    # benchmark test set (6000 face pairs)
+
 
 
         # MLFW - duo
