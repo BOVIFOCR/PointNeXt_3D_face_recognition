@@ -1,4 +1,4 @@
-name: pointnext_py37
+# name: pointnext_py37
 channels:
   - pytorch
   - nvidia
