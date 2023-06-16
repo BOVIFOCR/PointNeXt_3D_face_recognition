@@ -19,9 +19,12 @@ from scipy import interpolate
 try:
     from .dataloaders.lfw_pairs_3Dreconstructed_MICA import LFW_Pairs_3DReconstructedMICA
     from .dataloaders.mlfw_pairs_3Dreconstructed_MICA import MLFW_Pairs_3DReconstructedMICA
+    from .dataloaders.lfwMag_pairs_3Dreconstructed_MICA import LFWMag_Pairs_3DReconstructedMICA
+
 except ImportError as e:
     from dataloaders.lfw_pairs_3Dreconstructed_MICA import LFW_Pairs_3DReconstructedMICA
     from dataloaders.mlfw_pairs_3Dreconstructed_MICA import MLFW_Pairs_3DReconstructedMICA
+    from dataloaders.lfwMag_pairs_3Dreconstructed_MICA import LFWMag_Pairs_3DReconstructedMICA
 
 np.random.seed(440)   # Bernardo
 
@@ -64,11 +67,16 @@ class VerificationTester:
         # LFW - diolkos
         self.LFW_POINT_CLOUDS = '/nobackup/unico/datasets/face_recognition/MICA_3Dreconstruction/lfw'
         self.LFW_BENCHMARK_VERIF_PAIRS_LIST = '/nobackup/unico/datasets/face_recognition/lfw/pairs.txt'    # benchmark test set (6000 face pairs)
-
+        
 
         # MLFW - duo
         self.MLFW_POINT_CLOUDS = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MLFW/origin'
         self.MLFW_BENCHMARK_VERIF_PAIRS_LIST = '/datasets1/bjgbiesseck/MLFW/pairs.txt'
+
+
+        # LFW MAG 
+        self.LFWMag_POINT_CLOUDS = '/home/pbqv20/datasets/agedb_bkp/agedb_3d'
+        self.LFWMag_BENCHMARK_VERIF_PAIRS_LIST = '/home/pbqv20/datasets/lfw_bkp/pairs.txt'
 
 
     def pc_normalize(self, pc):
@@ -138,6 +146,11 @@ class VerificationTester:
             # file_ext = 'mesh.ply'
             file_ext = 'mesh_centralized-nosetip_with-normals_filter-radius=100.npy'
             all_pairs_paths_label, folds_indexes, pos_pair_label, neg_pair_label = MLFW_Pairs_3DReconstructedMICA().load_pointclouds_pairs_with_labels(self.MLFW_POINT_CLOUDS, self.MLFW_BENCHMARK_VERIF_PAIRS_LIST, file_ext)
+        
+        elif dataset_name.upper() == 'LFWMAG':
+            file_ext = 'mesh_centralized-nosetip_with-normals_filter-radius=100.npy'
+            all_pairs_paths_label, folds_indexes, pos_pair_label, neg_pair_label = LFWMag_Pairs_3DReconstructedMICA().load_pointclouds_pairs_with_labels(self.LFWMag_POINT_CLOUDS, self.LFWMag_BENCHMARK_VERIF_PAIRS_LIST, file_ext)
+
 
         else:
             print(f'\nError: dataloader for dataset \'{dataset_name}\' not implemented!\n')
@@ -488,7 +501,7 @@ class VerificationTester:
         tpr, fpr, accuracy = self.calculate_roc(thresholds, folds_pair_distances, folds_pair_labels, nrof_folds=10, verbose=verbose)
 
         thresholds = np.arange(0, 4, 0.001)
-        tar_mean, tar_std, far_mean = self.calculate_tar(thresholds, folds_pair_distances, folds_pair_labels, far_target=1e-3, nrof_folds=10, verbose=verbose)
+        tar_mean, tar_std, far_mean = self.calculate_tar(thresholds, folds_pair_distances, folds_pair_labels, far_target=1e-1, nrof_folds=10, verbose=verbose)
 
         if verbose:
             print('------------')
@@ -530,6 +543,8 @@ if __name__ == "__main__":
 
     # Build model
     print('Building model...')
+    print(cfg.model)
+    
     model = build_model_from_cfg(cfg.model).to(0)
 
     # Load trained weights
