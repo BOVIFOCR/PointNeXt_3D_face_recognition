@@ -17,7 +17,7 @@ wandb:
 dataset:
   common:
     NAME: MS1MV3_3D_22subj     # 22 CLASSES (toy example)
-    data_dir: '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_22subj'
+    data_dir: '/home/pbqv20/PointNeXt_3D_face_recognition/MS-Celeb-1M_3D_reconstruction_MICA/images_22subj'
 
     # NAME: MS1MV3_3D_1000subj   # 1000 CLASSES
     # data_dir: '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_1000subj'
@@ -64,7 +64,7 @@ datatransforms:
     shift: [0.2, 0.2, 0.2]
 # batch_size: 32     # original
 # batch_size: 64
-batch_size: 128
+batch_size: 12
 # batch_size: 16
 # batch_size: 8
 dataloader:
