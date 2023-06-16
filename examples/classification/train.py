@@ -370,7 +370,8 @@ def validate_other_datasets(model, cfg, epoch, writer, best_results_other_datase
     verificationTester = VerificationTester()
     for dataset in cfg.val_other_datasets:
         print(f'Validating on dataset {dataset}...')
-        acc_mean, acc_std, tar, tar_std, far = verificationTester.do_verification_test(model, dataset, cfg.num_points, verbose=False)
+        acc_mean, acc_std, tar, tar_std, far, \
+            tp_idx, fp_idx, tn_idx, fn_idx, ta_idx, fa_idx = verificationTester.do_verification_test(model, dataset, cfg.num_points, verbose=False)
 
         # {'acc_mean': 0.0, 'acc_std': 0.0}
         results_other_datasets[dataset]['acc_mean'] = acc_mean

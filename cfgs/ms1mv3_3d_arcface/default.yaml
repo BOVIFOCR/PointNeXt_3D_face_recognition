@@ -17,23 +17,24 @@ wandb:
 dataset:
   common:
     NAME: MS1MV3_3D_22subj     # 22 CLASSES (toy example)
-    data_dir: '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_22subj'
+    data_dir: '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_22subj'  # duo
+    # data_dir: '/nobackup1/bjgbiesseck/datasets/MS-Celeb-1M_3D_reconstruction_originalMICA/images_22subj'   # peixoto
 
     # NAME: MS1MV3_3D_1000subj   # 1000 CLASSES
-    # data_dir: '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_1000subj'
-  
+    # data_dir: '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_1000subj'  # duo
+
     # NAME: MS1MV3_3D_2000subj   # 2000 CLASSES
-    # data_dir: '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_2000subj'
+    # data_dir: '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_2000subj'  # duo
 
     # NAME: MS1MV3_3D_5000subj   # 5000 CLASSES
-    # data_dir: '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_5000subj'
+    # data_dir: '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_5000subj'  # duo
 
     # NAME: MS1MV3_3D_10000subj  # 10000 CLASSES
-    # data_dir: '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_10000subj'
+    # data_dir: '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_10000subj'  # duo
 
     # NAME: MS1MV3_3D_93424subj  # 93424 CLASSES (whole dataset)
-    # data_dir: '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images'
-  
+    # data_dir: '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images'  # duo
+
   train:
     split: train
     num_points: 1024  # in training, use sampled 1024 points for data augmentation.
@@ -63,8 +64,8 @@ datatransforms:
   kwargs:
     shift: [0.2, 0.2, 0.2]
 # batch_size: 32     # original
-# batch_size: 64
-batch_size: 128
+batch_size: 64
+# batch_size: 128
 # batch_size: 16
 # batch_size: 8
 dataloader:
@@ -85,8 +86,8 @@ lr: 0.001
 
 # this one is better. 
 sched: cosine
-# epochs: 100
-epochs: 150
+epochs: 100
+# epochs: 150
 warmup_epochs: 0
 min_lr: null
 
@@ -110,8 +111,8 @@ print_freq: 10
 val_freq: 1
 
 # ----------------- Model related
-# val_batch_size: 64     # original
-val_batch_size: 128
+val_batch_size: 64     # original
+# val_batch_size: 128
 pretrained_path: null
 
 seed: null

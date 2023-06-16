@@ -58,17 +58,17 @@ class LFold:
 class VerificationTester:
 
     def __init__(self):
-        # # LFW - duo
-        # self.LFW_POINT_CLOUDS = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/lfw'
-        # self.LFW_BENCHMARK_VERIF_PAIRS_LIST = '/datasets1/bjgbiesseck/lfw/pairs.txt'    # benchmark test set (6000 face pairs)
+        # LFW - duo
+        self.LFW_POINT_CLOUDS = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/lfw'
+        self.LFW_BENCHMARK_VERIF_PAIRS_LIST = '/datasets1/bjgbiesseck/lfw/pairs.txt'    # benchmark test set (6000 face pairs)
 
         # # LFW - diolkos
         # self.LFW_POINT_CLOUDS = '/nobackup/unico/datasets/face_recognition/MICA_3Dreconstruction/lfw'
         # self.LFW_BENCHMARK_VERIF_PAIRS_LIST = '/nobackup/unico/datasets/face_recognition/lfw/pairs.txt'    # benchmark test set (6000 face pairs)
 
         # LFW - peixoto
-        self.LFW_POINT_CLOUDS = '/nobackup1/bjgbiesseck/datasets/MICA_3Dreconstruction/lfw'
-        self.LFW_BENCHMARK_VERIF_PAIRS_LIST = '/nobackup1/bjgbiesseck/datasets/MICA_3Dreconstruction/lfw/pairs.txt'    # benchmark test set (6000 face pairs)
+        # self.LFW_POINT_CLOUDS = '/nobackup1/bjgbiesseck/datasets/MICA_3Dreconstruction/lfw'
+        # self.LFW_BENCHMARK_VERIF_PAIRS_LIST = '/nobackup1/bjgbiesseck/datasets/MICA_3Dreconstruction/lfw/pairs.txt'    # benchmark test set (6000 face pairs)
 
 
 
@@ -382,6 +382,55 @@ class VerificationTester:
         return best_train_tresh, best_train_acc, train_tar, train_far, test_acc, test_tar, test_far, test_tp, test_fp, test_tn, test_fn
 
 
+    def get_tp_fp_tn_fn_pairs_indexes(self, predict_issame, actual_issame):
+        tp_idx = np.logical_and(predict_issame, actual_issame)
+        fp_idx = np.logical_and(predict_issame, np.logical_not(actual_issame))
+        tn_idx = np.logical_and(np.logical_not(predict_issame), np.logical_not(actual_issame))
+        fn_idx = np.logical_and(np.logical_not(predict_issame), actual_issame)
+
+        tp_idx = np.where(tp_idx == True)[0]
+        fp_idx = np.where(fp_idx == True)[0]
+        tn_idx = np.where(tn_idx == True)[0]
+        fn_idx = np.where(fn_idx == True)[0]
+
+        return tp_idx, fp_idx, tn_idx, fn_idx
+
+
+    def get_true_accept_false_accept_pairs_indexes(self, predict_issame, actual_issame):
+        ta_idx = np.logical_and(predict_issame, actual_issame)
+        fa_idx = np.logical_and(predict_issame, np.logical_not(actual_issame))
+
+        ta_idx = np.where(ta_idx == True)[0]
+        fa_idx = np.where(fa_idx == True)[0]
+
+        return ta_idx, fa_idx
+
+
+    def calculate_accuracy_tp_fp_tn_fn_pairs_indexes(self, threshold, dist, actual_issame):
+        predict_issame = np.less(dist, threshold)
+        tp = np.sum(np.logical_and(predict_issame, actual_issame))
+        fp = np.sum(np.logical_and(predict_issame, np.logical_not(actual_issame)))
+        tn = np.sum(np.logical_and(np.logical_not(predict_issame), np.logical_not(actual_issame)))
+        fn = np.sum(np.logical_and(np.logical_not(predict_issame), actual_issame))
+
+        tp_idx, fp_idx, tn_idx, fn_idx = self.get_tp_fp_tn_fn_pairs_indexes(predict_issame, actual_issame)
+
+        # print('tp_idx:', tp_idx)
+        # print('tp_idx.shape:', tp_idx.shape)
+        # print('fp_idx:', fp_idx)
+        # print('fp_idx.shape:', fp_idx.shape)
+        # print('tn_idx:', tn_idx)
+        # print('tn_idx.shape:', tn_idx.shape)
+        # print('fn_idx:', fn_idx)
+        # print('fn_idx.shape:', fn_idx.shape)
+        # sys.exit(0)
+
+        tpr = 0 if (tp + fn == 0) else float(tp) / float(tp + fn)
+        fpr = 0 if (fp + tn == 0) else float(fp) / float(fp + tn)
+        acc = float(tp + tn) / dist.size
+        return tpr, fpr, acc, tp_idx, fp_idx, tn_idx, fn_idx
+
+
     def calculate_accuracy(self, threshold, dist, actual_issame):
         predict_issame = np.less(dist, threshold)
         tp = np.sum(np.logical_and(predict_issame, actual_issame))
@@ -411,6 +460,11 @@ class VerificationTester:
         accuracy = np.zeros((nrof_folds))
         indices = np.arange(nrof_pairs)
 
+        tp_idx = [None] * nrof_folds
+        fp_idx = [None] * nrof_folds
+        tn_idx = [None] * nrof_folds
+        fn_idx = [None] * nrof_folds
+
         for fold_idx, (train_set, test_set) in enumerate(k_fold.split(indices)):
             if verbose:
                 print(f'calculate_roc - fold_idx: {fold_idx}/{nrof_folds-1}', end='\r')
@@ -425,16 +479,50 @@ class VerificationTester:
                 tprs[fold_idx, threshold_idx], fprs[fold_idx, threshold_idx], _ = self.calculate_accuracy(
                     threshold, dist[test_set],
                     actual_issame[test_set])
-            _, _, accuracy[fold_idx] = self.calculate_accuracy(
+
+            # original
+            # _, _, accuracy[fold_idx] = self.calculate_accuracy(
+            #     thresholds[best_threshold_index], dist[test_set],
+            #     actual_issame[test_set])
+
+            # Bernardo
+            _, _, accuracy[fold_idx], tp_idx[fold_idx], fp_idx[fold_idx], tn_idx[fold_idx], fn_idx[fold_idx] = self.calculate_accuracy_tp_fp_tn_fn_pairs_indexes(
                 thresholds[best_threshold_index], dist[test_set],
                 actual_issame[test_set])
-        
+
+            tp_idx[fold_idx] = test_set[tp_idx[fold_idx]]
+            fp_idx[fold_idx] = test_set[fp_idx[fold_idx]]
+            tn_idx[fold_idx] = test_set[tn_idx[fold_idx]]
+            fn_idx[fold_idx] = test_set[fn_idx[fold_idx]]
+
+        tp_idx = np.concatenate(tp_idx)
+        fp_idx = np.concatenate(fp_idx)
+        tn_idx = np.concatenate(tn_idx)
+        fn_idx = np.concatenate(fn_idx)
+
         if verbose:
             print('')
 
         tpr = np.mean(tprs, 0)
         fpr = np.mean(fprs, 0)
-        return tpr, fpr, accuracy
+        # return tpr, fpr, accuracy
+        return tpr, fpr, accuracy, tp_idx, fp_idx, tn_idx, fn_idx
+
+
+    # Based on 'calculate_val_far()' of insightface - https://github.com/deepinsight/insightface/blob/master/recognition/arcface_torch/eval/verification.py#L165
+    def calculate_tar_far_tp_fp_tn_fn_pairs_indexes(self, threshold, dist, actual_issame):
+        predict_issame = np.less(dist, threshold)
+        true_accept = np.sum(np.logical_and(predict_issame, actual_issame))
+        false_accept = np.sum(np.logical_and(predict_issame, np.logical_not(actual_issame)))
+        n_same = np.sum(actual_issame)
+        n_diff = np.sum(np.logical_not(actual_issame))
+
+        ta_idx, fa_idx = self.get_true_accept_false_accept_pairs_indexes(predict_issame, actual_issame)
+
+        tar = float(true_accept) / float(n_same)
+        far = float(false_accept) / float(n_diff)
+        return tar, far, ta_idx, fa_idx
+
 
     # Same as 'calculate_val_far()' of insightface - https://github.com/deepinsight/insightface/blob/master/recognition/arcface_torch/eval/verification.py#L165
     def calculate_tar_far(self, threshold, dist, actual_issame):
@@ -463,6 +551,9 @@ class VerificationTester:
         # dist = np.sum(np.square(diff), 1)
         indices = np.arange(nrof_pairs)
 
+        ta_idx = [None] * nrof_folds
+        fa_idx = [None] * nrof_folds
+
         for fold_idx, (train_set, test_set) in enumerate(k_fold.split(indices)):
             if verbose:
                 print(f'calculate_tar - fold_idx: {fold_idx}/{nrof_folds-1}', end='\r')
@@ -478,29 +569,51 @@ class VerificationTester:
             else:
                 threshold = 0.0
 
-            tar[fold_idx], far[fold_idx] = self.calculate_tar_far(
+            # original
+            # tar[fold_idx], far[fold_idx] = self.calculate_tar_far(
+            #     threshold, dist[test_set], actual_issame[test_set])
+
+            # Bernardo
+            tar[fold_idx], far[fold_idx], ta_idx[fold_idx], fa_idx[fold_idx] = self.calculate_tar_far_tp_fp_tn_fn_pairs_indexes(
                 threshold, dist[test_set], actual_issame[test_set])
-        
+
+            ta_idx[fold_idx] = test_set[ta_idx[fold_idx]]
+            fa_idx[fold_idx] = test_set[fa_idx[fold_idx]]
+
+        ta_idx = np.concatenate(ta_idx)
+        fa_idx = np.concatenate(fa_idx)
+
         if verbose:
             print('')
 
         tar_mean = np.mean(tar)
         far_mean = np.mean(far)
         tar_std = np.std(tar)
-        return tar_mean, tar_std, far_mean
+        # return tar_mean, tar_std, far_mean
+        return tar_mean, tar_std, far_mean, ta_idx, fa_idx
 
 
     def do_k_fold_test(self, folds_pair_distances, folds_pair_labels, folds_indexes, verbose=True):
         thresholds = np.arange(0, 4, 0.01)
-        tpr, fpr, accuracy = self.calculate_roc(thresholds, folds_pair_distances, folds_pair_labels, nrof_folds=10, verbose=verbose)
+        # tpr, fpr, accuracy = self.calculate_roc(thresholds, folds_pair_distances, folds_pair_labels, nrof_folds=10, verbose=verbose)
+        tpr, fpr, accuracy, tp_idx, fp_idx, tn_idx, fn_idx = self.calculate_roc(thresholds, folds_pair_distances, folds_pair_labels, nrof_folds=10, verbose=verbose)
+        # print('tp_idx.shape:', tp_idx.shape)
+        # print('fp_idx.shape:', fp_idx.shape)
+        # print('tn_idx.shape:', tn_idx.shape)
+        # print('fn_idx.shape:', fn_idx.shape)
 
         thresholds = np.arange(0, 4, 0.001)
-        tar_mean, tar_std, far_mean = self.calculate_tar(thresholds, folds_pair_distances, folds_pair_labels, far_target=1e-3, nrof_folds=10, verbose=verbose)
+        # tar_mean, tar_std, far_mean = self.calculate_tar(thresholds, folds_pair_distances, folds_pair_labels, far_target=1e-3, nrof_folds=10, verbose=verbose)
+        tar_mean, tar_std, far_mean, ta_idx, fa_idx = self.calculate_tar(thresholds, folds_pair_distances, folds_pair_labels, far_target=1e-3, nrof_folds=10, verbose=verbose)
+        # print('ta_idx.shape:', ta_idx.shape)
+        # print('fa_idx.shape:', fa_idx.shape)
 
         if verbose:
             print('------------')
 
-        return tpr, fpr, accuracy, tar_mean, tar_std, far_mean
+        # return tpr, fpr, accuracy, tar_mean, tar_std, far_mean
+        return tpr, fpr, accuracy, tar_mean, tar_std, far_mean, \
+            tp_idx, fp_idx, tn_idx, fn_idx, ta_idx, fa_idx
 
 
     def do_verification_test(self, model, dataset='LFW', num_points=2048, batch_size=32, verbose=True):
@@ -515,11 +628,15 @@ class VerificationTester:
         folds_pair_distances = self.compute_set_distances(model, folds_pair_cache, batch_size, verbose=verbose)
         folds_pair_distances = folds_pair_distances.cpu().detach().numpy()
 
-        tpr, fpr, accuracy, tar_mean, tar_std, far_mean = self.do_k_fold_test(folds_pair_distances, folds_pair_labels, folds_indexes, verbose=verbose)
+        # tpr, fpr, accuracy, tar_mean, tar_std, far_mean = self.do_k_fold_test(folds_pair_distances, folds_pair_labels, folds_indexes, verbose=verbose)
+        tpr, fpr, accuracy, tar_mean, tar_std, far_mean, \
+            tp_idx, fp_idx, tn_idx, fn_idx, ta_idx, fa_idx = self.do_k_fold_test(folds_pair_distances, folds_pair_labels, folds_indexes, verbose=verbose)
         acc_mean, acc_std = np.mean(accuracy), np.std(accuracy)
         # print(f'acc_mean={acc_mean},    acc_std={acc_std}')
-        
-        return acc_mean, acc_std, tar_mean, tar_std, far_mean
+
+        # return acc_mean, acc_std, tar_mean, tar_std, far_mean
+        return acc_mean, acc_std, tar_mean, tar_std, far_mean, \
+            tp_idx, fp_idx, tn_idx, fn_idx, ta_idx, fa_idx
 
 
 
@@ -543,7 +660,9 @@ if __name__ == "__main__":
     model, best_epoch, metrics = verif_tester.load_trained_weights_from_cfg_file(model, args.cfg, args.checkpoint_suffix)
     model.eval()
 
-    acc_mean, acc_std, tar, tar_std, far = verif_tester.do_verification_test(model, args.dataset, args.num_points, args.batch, verbose=True)
+    # acc_mean, acc_std, tar, tar_std, far = verif_tester.do_verification_test(model, args.dataset, args.num_points, args.batch, verbose=True)
+    acc_mean, acc_std, tar, tar_std, far, \
+        tp_idx, fp_idx, tn_idx, fn_idx, ta_idx, fa_idx = verif_tester.do_verification_test(model, args.dataset, args.num_points, args.batch, verbose=True)
 
     print('\nFinal - dataset: %s  -  acc_mean: %.6f ± %.6f  -  tar: %.6f ± %.6f    far: %.6f)' % (args.dataset, acc_mean, acc_std, tar, tar_std, far))
     print('Finished!')
