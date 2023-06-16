@@ -6,8 +6,8 @@ from glob import glob
 from pathlib import Path
 
 
-# BERNARDO
-class TreeLFWMag_3DReconstructedMICA:
+# PEDRO
+class TreeMagVerif_3DReconstructedMICA:
     
     def get_all_sub_folders(self, dir_path=''):
         return sorted(glob(dir_path + '/*/*/'))
@@ -200,7 +200,7 @@ if __name__ == '__main__':
     # plots_fr_pointnet2.plot_samples_per_class_and_histogram(unique_subjects_names, samples_per_subject, log_scale, title=title, subtitle=subtitle, path_image=path_image, show_fig=False, save_fig=True)
     
     protocol_file_path = '/home/pbqv20/datasets/lfw_bkp/pairs.txt'
-    all_pos_pairs_paths, all_neg_pairs_paths, pos_pair_label, neg_pair_label = TreeLFWMag_3DReconstructedMICA().load_pairs_samples_protocol_from_file(protocol_file_path, dataset_path, file_ext)
+    all_pos_pairs_paths, all_neg_pairs_paths, pos_pair_label, neg_pair_label = TreeMagVerif_3DReconstructedMICA().load_pairs_samples_protocol_from_file(protocol_file_path, dataset_path, file_ext)
     
 
     for pos_pairs in all_pos_pairs_paths:

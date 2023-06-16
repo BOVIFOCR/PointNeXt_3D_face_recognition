@@ -5,13 +5,13 @@ import os
 from glob import glob
 from pathlib import Path
 
-from .tree_lfwMag_3Dreconstructed_MICA import TreeLFWMag_3DReconstructedMICA
+from .tree_MagVerif_3Dreconstructed_MICA import TreeMagVerif_3DReconstructedMICA
 
 # BERNARDO
-class LFWMag_Pairs_3DReconstructedMICA:
+class MagVerif_Pairs_3DReconstructedMICA:
 
     def load_pointclouds_pairs_with_labels(self, root, protocol_file_path, file_ext='*_centralized-nosetip_with-normals_filter-radius=100.npy'):
-        all_pairs_paths_label, folds_indexes, pos_pair_label, neg_pair_label = TreeLFWMag_3DReconstructedMICA().load_all_pairs_samples_from_protocol_file(root, protocol_file_path, file_ext)
+        all_pairs_paths_label, folds_indexes, pos_pair_label, neg_pair_label = TreeMagVerif_3DReconstructedMICA().load_all_pairs_samples_from_protocol_file(root, protocol_file_path, file_ext)
         # print('\nLFW_Pairs_3DReconstructedMICA - load_pointclouds_pairs_with_labels')
         # print('all_pairs_paths_label:', all_pairs_paths_label)
         # print('len(all_pairs_paths_label):', len(all_pairs_paths_label))

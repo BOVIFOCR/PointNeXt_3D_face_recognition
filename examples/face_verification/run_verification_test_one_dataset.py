@@ -65,12 +65,10 @@ class VerificationTester:
         # self.LFW_POINT_CLOUDS = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/lfw'
         # self.LFW_BENCHMARK_VERIF_PAIRS_LIST = '/datasets1/bjgbiesseck/lfw/pairs.txt'    # benchmark test set (6000 face pairs)
 
-<<<<<<< HEAD
         # LFW - diolkos
         self.LFW_POINT_CLOUDS = '/nobackup/unico/datasets/face_recognition/MICA_3Dreconstruction/lfw'
         self.LFW_BENCHMARK_VERIF_PAIRS_LIST = '/nobackup/unico/datasets/face_recognition/lfw/pairs.txt'    # benchmark test set (6000 face pairs)
         
-=======
         # # LFW - diolkos
         # self.LFW_POINT_CLOUDS = '/nobackup/unico/datasets/face_recognition/MICA_3Dreconstruction/lfw'
         # self.LFW_BENCHMARK_VERIF_PAIRS_LIST = '/nobackup/unico/datasets/face_recognition/lfw/pairs.txt'    # benchmark test set (6000 face pairs)
@@ -80,16 +78,15 @@ class VerificationTester:
         self.LFW_BENCHMARK_VERIF_PAIRS_LIST = '/nobackup1/bjgbiesseck/datasets/MICA_3Dreconstruction/lfw/pairs.txt'    # benchmark test set (6000 face pairs)
 
 
->>>>>>> origin/master
 
         # MLFW - duo
         self.MLFW_POINT_CLOUDS = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MLFW/origin'
         self.MLFW_BENCHMARK_VERIF_PAIRS_LIST = '/datasets1/bjgbiesseck/MLFW/pairs.txt'
 
 
-        # LFW MAG 
-        self.LFWMag_POINT_CLOUDS = '/home/pbqv20/datasets/agedb_bkp/agedb_3d'
-        self.LFWMag_BENCHMARK_VERIF_PAIRS_LIST = '/home/pbqv20/datasets/lfw_bkp/pairs.txt'
+        # MAG VERIF
+        self.MagVerif_POINT_CLOUDS = '/home/pbqv20/datasets/agedb_bkp/agedb_3d'
+        self.MagVerif_BENCHMARK_VERIF_PAIRS_LIST = '/home/pbqv20/datasets/lfw_bkp/pairs.txt'
 
 
     def pc_normalize(self, pc):
@@ -161,9 +158,9 @@ class VerificationTester:
             file_ext = 'mesh_centralized-nosetip_with-normals_filter-radius=100.npy'
             all_pairs_paths_label, folds_indexes, pos_pair_label, neg_pair_label = MLFW_Pairs_3DReconstructedMICA().load_pointclouds_pairs_with_labels(self.MLFW_POINT_CLOUDS, self.MLFW_BENCHMARK_VERIF_PAIRS_LIST, file_ext)
         
-        elif dataset_name.upper() == 'LFWMAG':
+        elif dataset_name.upper() == 'MAGVERIF':
             file_ext = 'mesh_centralized-nosetip_with-normals_filter-radius=100.npy'
-            all_pairs_paths_label, folds_indexes, pos_pair_label, neg_pair_label = LFWMag_Pairs_3DReconstructedMICA().load_pointclouds_pairs_with_labels(self.LFWMag_POINT_CLOUDS, self.LFWMag_BENCHMARK_VERIF_PAIRS_LIST, file_ext)
+            all_pairs_paths_label, folds_indexes, pos_pair_label, neg_pair_label = MagVerif_Pairs_3DReconstructedMICA().load_pointclouds_pairs_with_labels(self.LFWMag_POINT_CLOUDS, self.LFWMag_BENCHMARK_VERIF_PAIRS_LIST, file_ext)
 
 
         else:
