@@ -24,7 +24,7 @@ try:
 except ImportError as e:
     from dataloaders.lfw_pairs_3Dreconstructed_MICA import LFW_Pairs_3DReconstructedMICA
     from dataloaders.mlfw_pairs_3Dreconstructed_MICA import MLFW_Pairs_3DReconstructedMICA
-    from dataloaders.lfwMag_pairs_3Dreconstructed_MICA import LFWMag_Pairs_3DReconstructedMICA
+    from dataloaders.magVerif_pairs_3Dreconstructed_MICA import MagVerif_Pairs_3DReconstructedMICA
 
 np.random.seed(440)   # Bernardo
 
@@ -160,7 +160,7 @@ class VerificationTester:
         
         elif dataset_name.upper() == 'MAGVERIF':
             file_ext = 'mesh_centralized-nosetip_with-normals_filter-radius=100.npy'
-            all_pairs_paths_label, folds_indexes, pos_pair_label, neg_pair_label = MagVerif_Pairs_3DReconstructedMICA().load_pointclouds_pairs_with_labels(self.LFWMag_POINT_CLOUDS, self.LFWMag_BENCHMARK_VERIF_PAIRS_LIST, file_ext)
+            all_pairs_paths_label, folds_indexes, pos_pair_label, neg_pair_label = MagVerif_Pairs_3DReconstructedMICA().load_pointclouds_pairs_with_labels(self.MagVerif_POINT_CLOUDS, self.MagVerif_BENCHMARK_VERIF_PAIRS_LIST, file_ext)
 
 
         else:
