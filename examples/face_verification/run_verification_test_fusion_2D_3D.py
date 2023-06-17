@@ -82,7 +82,9 @@ class LateFusionVerificationTester(VerificationTester):
             else:  # for fusion_methods = ['mean', 'min', 'max']
                 distances_fused[fm] = self.fuse_scores(distances_pairs_2d, distances_pairs_3d, method=fm)
 
-                tpr, fpr, accuracy, tar_mean, tar_std, far_mean = self.do_k_fold_test(distances_fused[fm], folds_pair_labels, folds_indexes, verbose=verbose)
+                # tpr, fpr, accuracy, tar_mean, tar_std, far_mean = self.do_k_fold_test(distances_fused[fm], folds_pair_labels, folds_indexes, verbose=verbose)
+                tpr, fpr, accuracy, tar_mean, tar_std, far_mean, \
+                    tp_idx, fp_idx, tn_idx, fn_idx, ta_idx, fa_idx = self.do_k_fold_test(distances_fused[fm], folds_pair_labels, folds_indexes, verbose=verbose)
                 acc_mean, acc_std = np.mean(accuracy), np.std(accuracy)
 
             results_fused[fm] = {}
@@ -91,6 +93,12 @@ class LateFusionVerificationTester(VerificationTester):
             results_fused[fm]['tar_mean'] = tar_mean
             results_fused[fm]['tar_std'] = tar_std
             results_fused[fm]['far_mean'] = far_mean
+            results_fused[fm]['tp_idx'] = tp_idx
+            results_fused[fm]['fp_idx'] = fp_idx
+            results_fused[fm]['tn_idx'] = tn_idx
+            results_fused[fm]['fn_idx'] = fn_idx
+            results_fused[fm]['ta_idx'] = ta_idx
+            results_fused[fm]['fa_idx'] = fa_idx
 
         # return acc_mean, acc_std, tar_mean, tar_std, far_mean
         return results_fused
@@ -99,7 +107,7 @@ class LateFusionVerificationTester(VerificationTester):
 
 if __name__ == "__main__":
 
-    late_fusion_verif_tester = LateFusionVerificationTester()
+    verif_tester = LateFusionVerificationTester()
 
     # Initialization
     args, opts = parse_args()
@@ -114,7 +122,7 @@ if __name__ == "__main__":
     model = build_model_from_cfg(cfg.model).to(0)
 
     # Load trained weights
-    model, best_epoch, metrics = late_fusion_verif_tester.load_trained_weights_from_cfg_file(model, args.cfg)
+    model, best_epoch, metrics = verif_tester.load_trained_weights_from_cfg_file(model, args.cfg)
     model.eval()
 
     # Load 2D distances
@@ -133,16 +141,26 @@ if __name__ == "__main__":
     # fusion_methods = ['xgboost']
 
     # Do fused verification test
-    # acc_mean, acc_std, tar, tar_std, far = late_fusion_verif_tester.do_fusion_verification_test(model, args.dataset, args.num_points, distances_pairs_2d, args.batch, verbose=True)
-    results_fused = late_fusion_verif_tester.do_fusion_verification_test(model, args.dataset, args.num_points, distances_pairs_2d, args.batch, fusion_methods, verbose=True)
+    # acc_mean, acc_std, tar, tar_std, far = verif_tester.do_fusion_verification_test(model, args.dataset, args.num_points, distances_pairs_2d, args.batch, verbose=True)
+    results_dict = verif_tester.do_fusion_verification_test(model, args.dataset, args.num_points, distances_pairs_2d, args.batch, fusion_methods, verbose=True)
     print()
 
     for fm in fusion_methods:
-        acc_mean = results_fused[fm]['acc_mean']
-        acc_std = results_fused[fm]['acc_std']
-        tar_mean = results_fused[fm]['tar_mean']
-        tar_std = results_fused[fm]['tar_std']
-        far_mean = results_fused[fm]['far_mean']
+        acc_mean = results_dict[fm]['acc_mean']
+        acc_std  = results_dict[fm]['acc_std']
+        tar_mean = results_dict[fm]['tar_mean']
+        tar_std  = results_dict[fm]['tar_std']
+        far_mean = results_dict[fm]['far_mean']
+        tp_idx   = results_dict[fm]['tp_idx']
+        fp_idx   = results_dict[fm]['fp_idx']
+        tn_idx   = results_dict[fm]['tn_idx']
+        fn_idx   = results_dict[fm]['fn_idx']
+        ta_idx   = results_dict[fm]['ta_idx']
+        fa_idx   = results_dict[fm]['fa_idx']
+
+        if args.save_results:
+            verif_tester.save_results(results_dict, args, model='ResNet+PointNeXt_fusion='+str(fm))
+
         print('Final - dataset: %s  -  fusion_method: %s  -  acc_mean: %.6f ± %.6f  -  tar_mean: %.6f ± %.6f    far_mean: %.6f)' % (args.dataset, fm, acc_mean, acc_std, tar_mean, tar_std, far_mean))
 
     print('\nFinished!')

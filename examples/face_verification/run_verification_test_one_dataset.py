@@ -657,19 +657,17 @@ class VerificationTester:
             tp_idx, fp_idx, tn_idx, fn_idx, ta_idx, fa_idx
 
 
-    def save_verif_indexes_dataset(self, results_dict, args):
-        import pickle
+    def save_results(self, results_dict, args, model='PointNeXt'):
         dir_results = '/'.join(args.cfg.split('/')[:-1]) + '/results'
-        file_results = 'eval_results_dataset=' + str(args.dataset) + '.pkl'
+        file_results = 'results_model=' + model + '_checkpoint=' + str(args.checkpoint_suffix) + '_num_points=' + str(args.num_points) + '_dataset=' + str(args.dataset) + '.npy'
         path_file_results = dir_results + '/' + file_results
 
         if not os.path.isdir(dir_results):
             os.makedirs(dir_results)
 
         print('\nSaving results and pairs indexes:', path_file_results)
-        with open(path_file_results, 'wb') as f:
-            pickle.dump(results_dict, f)
-            print('Saved!')
+        np.save(path_file_results, results_dict)
+        print('Saved!')
 
 
 
@@ -712,7 +710,7 @@ if __name__ == "__main__":
         results_dict['fn_idx']   = fn_idx
         results_dict['ta_idx']   = ta_idx
         results_dict['fa_idx']   = fa_idx
-        verif_tester.save_verif_indexes_dataset(results_dict, args)
+        verif_tester.save_results(results_dict, args, model='PointNeXt')
 
     print('\nFinal - dataset: %s  -  acc_mean: %.6f ± %.6f  -  tar: %.6f ± %.6f    far: %.6f)' % (args.dataset, acc_mean, acc_std, tar, tar_std, far))
     print('Finished!')
