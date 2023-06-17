@@ -36,6 +36,7 @@ def parse_args():
     parser.add_argument('--num_points', type=int, default=2048, help='number of points to subsample')
     parser.add_argument('--batch', type=int, default=16, help='batch size to compute face embeddings')
     parser.add_argument('--checkpoint_suffix', type=str, default='_ckpt_best.pth', help='end of model weights file')
+    parser.add_argument('--save_results', action='store_true', default=False, help='')
 
     # FOR FUSION TESTS
     parser.add_argument('--arcdists', type=str, default='/datasets1/bjgbiesseck/MS-Celeb-1M/faces_emore/lfw_distances_arcface=1000class_acc=0.93833.npy', help='dataset name')
@@ -61,21 +62,21 @@ class LFold:
 class VerificationTester:
 
     def __init__(self):
-        # LFW - duo
-        self.LFW_POINT_CLOUDS = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/lfw'
-        self.LFW_BENCHMARK_VERIF_PAIRS_LIST = '/datasets1/bjgbiesseck/lfw/pairs.txt'    # benchmark test set (6000 face pairs)
+        # # LFW - duo
+        # self.LFW_POINT_CLOUDS = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/lfw'
+        # self.LFW_BENCHMARK_VERIF_PAIRS_LIST = '/datasets1/bjgbiesseck/lfw/pairs.txt'    # benchmark test set (6000 face pairs)
 
-        # LFW - diolkos
-        self.LFW_POINT_CLOUDS = '/nobackup/unico/datasets/face_recognition/MICA_3Dreconstruction/lfw'
-        self.LFW_BENCHMARK_VERIF_PAIRS_LIST = '/nobackup/unico/datasets/face_recognition/lfw/pairs.txt'    # benchmark test set (6000 face pairs)
+        # # LFW - diolkos
+        # self.LFW_POINT_CLOUDS = '/nobackup/unico/datasets/face_recognition/MICA_3Dreconstruction/lfw'
+        # self.LFW_BENCHMARK_VERIF_PAIRS_LIST = '/nobackup/unico/datasets/face_recognition/lfw/pairs.txt'    # benchmark test set (6000 face pairs)
         
         # # LFW - diolkos
         # self.LFW_POINT_CLOUDS = '/nobackup/unico/datasets/face_recognition/MICA_3Dreconstruction/lfw'
         # self.LFW_BENCHMARK_VERIF_PAIRS_LIST = '/nobackup/unico/datasets/face_recognition/lfw/pairs.txt'    # benchmark test set (6000 face pairs)
 
         # LFW - peixoto
-        # self.LFW_POINT_CLOUDS = '/nobackup1/bjgbiesseck/datasets/MICA_3Dreconstruction/lfw'
-        # self.LFW_BENCHMARK_VERIF_PAIRS_LIST = '/nobackup1/bjgbiesseck/datasets/MICA_3Dreconstruction/lfw/pairs.txt'    # benchmark test set (6000 face pairs)
+        self.LFW_POINT_CLOUDS = '/nobackup1/bjgbiesseck/datasets/MICA_3Dreconstruction/lfw'
+        self.LFW_BENCHMARK_VERIF_PAIRS_LIST = '/nobackup1/bjgbiesseck/datasets/MICA_3Dreconstruction/lfw/pairs.txt'    # benchmark test set (6000 face pairs)
 
 
 
@@ -656,6 +657,21 @@ class VerificationTester:
             tp_idx, fp_idx, tn_idx, fn_idx, ta_idx, fa_idx
 
 
+    def save_verif_indexes_dataset(self, results_dict, args):
+        import pickle
+        dir_results = '/'.join(args.cfg.split('/')[:-1]) + '/results'
+        file_results = 'eval_results_dataset=' + str(args.dataset) + '.pkl'
+        path_file_results = dir_results + '/' + file_results
+
+        if not os.path.isdir(dir_results):
+            os.makedirs(dir_results)
+
+        print('\nSaving results and pairs indexes:', path_file_results)
+        with open(path_file_results, 'wb') as f:
+            pickle.dump(results_dict, f)
+            print('Saved!')
+
+
 
 if __name__ == "__main__":
 
@@ -671,7 +687,7 @@ if __name__ == "__main__":
 
     # Build model
     print('Building model...')
-    print(cfg.model)
+    # print(cfg.model)
     
     model = build_model_from_cfg(cfg.model).to(0)
 
@@ -682,6 +698,21 @@ if __name__ == "__main__":
     # acc_mean, acc_std, tar, tar_std, far = verif_tester.do_verification_test(model, args.dataset, args.num_points, args.batch, verbose=True)
     acc_mean, acc_std, tar, tar_std, far, \
         tp_idx, fp_idx, tn_idx, fn_idx, ta_idx, fa_idx = verif_tester.do_verification_test(model, args.dataset, args.num_points, args.batch, verbose=True)
+
+    if args.save_results:
+        results_dict = {}
+        results_dict['acc_mean'] = acc_mean
+        results_dict['acc_std']  = acc_std
+        results_dict['tar']      = tar
+        results_dict['tar_std']  = tar_std
+        results_dict['far']      = far
+        results_dict['tp_idx']   = tp_idx
+        results_dict['fp_idx']   = fp_idx
+        results_dict['tn_idx']   = tn_idx
+        results_dict['fn_idx']   = fn_idx
+        results_dict['ta_idx']   = ta_idx
+        results_dict['fa_idx']   = fa_idx
+        verif_tester.save_verif_indexes_dataset(results_dict, args)
 
     print('\nFinal - dataset: %s  -  acc_mean: %.6f ± %.6f  -  tar: %.6f ± %.6f    far: %.6f)' % (args.dataset, acc_mean, acc_std, tar, tar_std, far))
     print('Finished!')
