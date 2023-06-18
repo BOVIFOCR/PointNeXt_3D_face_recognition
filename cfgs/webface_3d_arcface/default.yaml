@@ -1,30 +1,34 @@
 
 # num_classes: 1000
 # num_classes: 2000
-num_classes: 5000
-# num_classes: 10000
+# num_classes: 5000
+num_classes: 10000
 # num_classes: 93424
 
 wandb:
   # project: PointNeXt_WEBFACE-3D_1000classes
   # project: PointNeXt_WEBFACE-3D_2000classes
-  project: PointNeXt_WEBFACE-3D_5000classes
-  # project: PointNeXt_WEBFACE-3D_10000classes
+  # project: PointNeXt_WEBFACE-3D_5000classes
+  project: PointNeXt_WEBFACE-3D_10000classes
   # project: PointNeXt_WEBFACE-3D_93424classes (whole dataset)
 
 dataset:
   common:
     # NAME: WEBFACE_3D_1000subj   # 1000 CLASSES
-    # data_dir: '/nobackup1/bjgbiesseck/datasets/WebFace260M_3D_reconstruction_originalMICA/images_1000subj'
+    # data_dir: '/datasets1/bjgbiesseck/WebFace260M/3D_reconstruction/images_1000subj'  # duo
+    # data_dir: '/nobackup1/bjgbiesseck/datasets/WebFace260M_3D_reconstruction_originalMICA/images_1000subj'  # peixoto
   
     # NAME: WEBFACE_3D_2000subj   # 2000 CLASSES
-    # data_dir: '/nobackup1/bjgbiesseck/datasets/WebFace260M_3D_reconstruction_originalMICA/images_2000subj'
+    # data_dir: '/datasets1/bjgbiesseck/WebFace260M/3D_reconstruction/images_2000subj'  # duo
+    # data_dir: '/nobackup1/bjgbiesseck/datasets/WebFace260M_3D_reconstruction_originalMICA/images_2000subj'  # peixoto
 
-    NAME: WEBFACE_3D_5000subj   # 5000 CLASSES
-    data_dir: '/nobackup1/bjgbiesseck/datasets/WebFace260M_3D_reconstruction_originalMICA/images_5000subj'
+    # NAME: WEBFACE_3D_5000subj   # 5000 CLASSES
+    # data_dir: '/datasets1/bjgbiesseck/WebFace260M/3D_reconstruction/images_5000subj'  # duo
+    # data_dir: '/nobackup1/bjgbiesseck/datasets/WebFace260M_3D_reconstruction_originalMICA/images_5000subj'  # peixoto
 
-    # NAME: WEBFACE_3D_10000subj  # 10000 CLASSES
-    # data_dir: '/nobackup1/bjgbiesseck/datasets/WebFace260M_3D_reconstruction_originalMICA/images_10000subj'
+    NAME: WEBFACE_3D_10000subj  # 10000 CLASSES
+    data_dir: '/datasets1/bjgbiesseck/WebFace260M/3D_reconstruction/images_10000subj'  # duo
+    # data_dir: '/nobackup1/bjgbiesseck/datasets/WebFace260M_3D_reconstruction_originalMICA/images_10000subj'  # peixoto
 
   train:
     split: train
@@ -74,8 +78,9 @@ dataloader:
 # Training parameters
 # lr: 0.001
 # lr: 0.0001
-lr: 0.00015
-# lr: 0.0005
+# lr: 0.00015
+lr: 0.000075
+# lr: 0.00005
 
 # this one is better. 
 sched: cosine
