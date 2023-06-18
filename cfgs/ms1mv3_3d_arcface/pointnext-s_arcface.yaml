@@ -36,11 +36,11 @@ model:
   cls_args: 
     NAME: ClsHeadArcface
 
-    # num_classes: 22      # toy example
+    num_classes: 22        # toy example
     # num_classes: 1000
     # num_classes: 2000
     # num_classes: 5000
-    num_classes: 10000
+    # num_classes: 10000
     # num_classes: 93424   # (whole dataset)
 
     # mlps: [512, 256]
