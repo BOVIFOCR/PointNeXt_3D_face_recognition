@@ -19,7 +19,7 @@ from scipy import interpolate
 try:
     from .dataloaders.lfw_pairs_3Dreconstructed_MICA import LFW_Pairs_3DReconstructedMICA
     from .dataloaders.mlfw_pairs_3Dreconstructed_MICA import MLFW_Pairs_3DReconstructedMICA
-    from .dataloaders.lfwMag_pairs_3Dreconstructed_MICA import LFWMag_Pairs_3DReconstructedMICA
+    from .dataloaders.magVerif_pairs_3Dreconstructed_MICA import MagVerif_Pairs_3DReconstructedMICA
 
 except ImportError as e:
     from dataloaders.lfw_pairs_3Dreconstructed_MICA import LFW_Pairs_3DReconstructedMICA
@@ -63,16 +63,16 @@ class VerificationTester:
 
     def __init__(self):
         # LFW - duo - benchmark test set (6000 face pairs)
-        # self.LFW_POINT_CLOUDS = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/lfw'
-        # self.LFW_BENCHMARK_VERIF_PAIRS_LIST = '/datasets1/bjgbiesseck/lfw/pairs.txt'
+        self.LFW_POINT_CLOUDS = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/lfw'
+        self.LFW_BENCHMARK_VERIF_PAIRS_LIST = '/datasets1/bjgbiesseck/lfw/pairs.txt'
 
-        # # LFW - diolkos - benchmark test set (6000 face pairs)
+        # LFW - diolkos - benchmark test set (6000 face pairs)
         # self.LFW_POINT_CLOUDS = '/nobackup/unico/datasets/face_recognition/MICA_3Dreconstruction/lfw'
         # self.LFW_BENCHMARK_VERIF_PAIRS_LIST = '/nobackup/unico/datasets/face_recognition/lfw/pairs.txt'
 
         # LFW - peixoto - benchmark test set (6000 face pairs)
-        self.LFW_POINT_CLOUDS = '/nobackup1/bjgbiesseck/datasets/MICA_3Dreconstruction/lfw'
-        self.LFW_BENCHMARK_VERIF_PAIRS_LIST = '/nobackup1/bjgbiesseck/datasets/MICA_3Dreconstruction/lfw/pairs.txt'
+        # self.LFW_POINT_CLOUDS = '/nobackup1/bjgbiesseck/datasets/MICA_3Dreconstruction/lfw'
+        # self.LFW_BENCHMARK_VERIF_PAIRS_LIST = '/nobackup1/bjgbiesseck/datasets/MICA_3Dreconstruction/lfw/pairs.txt'
 
 
         # MLFW - duo
