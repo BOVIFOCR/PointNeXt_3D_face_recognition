@@ -380,7 +380,6 @@ class VerificationTester:
 
 
     def load_organize_and_subsample_pointclouds(self, dataset='LFW', num_points=2048, verbose=True):
-        # Load test dataset
         folds_pair_data, folds_pair_labels, folds_indexes = self.load_dataset(dataset_name=dataset, verbose=verbose)
 
         folds_pair_cache = self.organize_and_subsample_pointcloud(folds_pair_data, npoints=num_points, verbose=verbose)
@@ -426,6 +425,7 @@ class VerificationTester:
 
     def calculate_accuracy_tp_fp_tn_fn_pairs_indexes(self, threshold, dist, actual_issame):
         predict_issame = np.less(dist, threshold)
+
         tp = np.sum(np.logical_and(predict_issame, actual_issame))
         fp = np.sum(np.logical_and(predict_issame, np.logical_not(actual_issame)))
         tn = np.sum(np.logical_and(np.logical_not(predict_issame), np.logical_not(actual_issame)))
@@ -433,19 +433,11 @@ class VerificationTester:
 
         tp_idx, fp_idx, tn_idx, fn_idx = self.get_tp_fp_tn_fn_pairs_indexes(predict_issame, actual_issame)
 
-        # print('tp_idx:', tp_idx)
-        # print('tp_idx.shape:', tp_idx.shape)
-        # print('fp_idx:', fp_idx)
-        # print('fp_idx.shape:', fp_idx.shape)
-        # print('tn_idx:', tn_idx)
-        # print('tn_idx.shape:', tn_idx.shape)
-        # print('fn_idx:', fn_idx)
-        # print('fn_idx.shape:', fn_idx.shape)
-        # sys.exit(0)
-
         tpr = 0 if (tp + fn == 0) else float(tp) / float(tp + fn)
         fpr = 0 if (fp + tn == 0) else float(fp) / float(fp + tn)
-        acc = float(tp + tn) / dist.size
+
+        # acc = float(tp + tn) / dist.size
+        acc = float(tp + tn) / actual_issame.size
         return tpr, fpr, acc, tp_idx, fp_idx, tn_idx, fn_idx
 
 
@@ -530,6 +522,7 @@ class VerificationTester:
     # Based on 'calculate_val_far()' of insightface - https://github.com/deepinsight/insightface/blob/master/recognition/arcface_torch/eval/verification.py#L165
     def calculate_tar_far_tp_fp_tn_fn_pairs_indexes(self, threshold, dist, actual_issame):
         predict_issame = np.less(dist, threshold)
+
         true_accept = np.sum(np.logical_and(predict_issame, actual_issame))
         false_accept = np.sum(np.logical_and(predict_issame, np.logical_not(actual_issame)))
         n_same = np.sum(actual_issame)
