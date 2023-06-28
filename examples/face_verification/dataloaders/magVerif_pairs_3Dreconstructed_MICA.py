@@ -7,7 +7,7 @@ from pathlib import Path
 
 from .tree_MagVerif_3Dreconstructed_MICA import TreeMagVerif_3DReconstructedMICA
 
-# BERNARDO
+# Pedro
 class MagVerif_Pairs_3DReconstructedMICA:
 
     def load_pointclouds_pairs_with_labels(self, root, protocol_file_path, file_ext='*_centralized-nosetip_with-normals_filter-radius=100.npy'):

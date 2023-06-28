@@ -85,6 +85,18 @@ class VerificationTester:
         self.MagVerif_BENCHMARK_VERIF_PAIRS_LIST = '/home/pbqv20/datasets/lfw_bkp/pairs.txt'
 
 
+        # AgeDB
+        self.AGEDB_POINT_CLOUDS = '/datasets2/pbqv20/agedb_bkp/agedb_3d'                 # duo
+        self.AGEDB_BENCHMARK_VERIF_PAIRS_LIST = '/datasets2/pbqv20/agedb_bkp/pairs.txt'  # duo
+
+
+        # CFP
+        self.CFP_POINT_CLOUDS = '/datasets2/pbqv20/cfp_bkp/cfp_3d'                       # duo
+        self.CFP_BENCHMARK_VERIF_PAIRS_LIST = '/datasets2/pbqv20/cfp_bkp/pairs.txt'      # duo
+
+        
+
+
     def pc_normalize(self, pc):
         pc /= 100
         pc = (pc - pc.min()) / (pc.max() - pc.min())
@@ -158,6 +170,13 @@ class VerificationTester:
             file_ext = 'mesh_centralized-nosetip_with-normals_filter-radius=100.npy'
             all_pairs_paths_label, folds_indexes, pos_pair_label, neg_pair_label = MagVerif_Pairs_3DReconstructedMICA().load_pointclouds_pairs_with_labels(self.MagVerif_POINT_CLOUDS, self.MagVerif_BENCHMARK_VERIF_PAIRS_LIST, file_ext)
 
+        elif dataset_name.upper() == 'AGEDB':
+            file_ext = 'mesh_centralized-nosetip_with-normals_filter-radius=100.npy'
+            all_pairs_paths_label, folds_indexes, pos_pair_label, neg_pair_label = MagVerif_Pairs_3DReconstructedMICA().load_pointclouds_pairs_with_labels(self.AGEDB_POINT_CLOUDS, self.AGEDB_BENCHMARK_VERIF_PAIRS_LIST, file_ext)
+
+        elif dataset_name.upper() == 'CFP':
+            file_ext = 'mesh_centralized-nosetip_with-normals_filter-radius=100.npy'
+            all_pairs_paths_label, folds_indexes, pos_pair_label, neg_pair_label = MagVerif_Pairs_3DReconstructedMICA().load_pointclouds_pairs_with_labels(self.CFP_POINT_CLOUDS, self.CFP_BENCHMARK_VERIF_PAIRS_LIST, file_ext)
 
         else:
             print(f'\nError: dataloader for dataset \'{dataset_name}\' not implemented!\n')
