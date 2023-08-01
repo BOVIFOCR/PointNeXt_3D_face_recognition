@@ -130,16 +130,20 @@ class TreeMagVerif_3DReconstructedMICA:
                 pos_pairs_paths = []
                 for _ in range(0, fold_size):
                     pair = all_lines[global_pair_idx].split(' ')   # Abel_Pacheco	1	4
+                    # print('pair:', pair)
                     index1, index2, label = pair
                     assert index1 != index2
-                    path_sample1 = glob(os.path.join(dataset_path, index1, index1, '*'+file_ext))[0]
-                    path_sample2 = glob(os.path.join(dataset_path, index2, index2, '*'+file_ext))[0]
+                    # print('os.path.join(dataset_path, index1, \'*\'+file_ext):', os.path.join(dataset_path, index1, '*'+file_ext))
+                    # path_sample1 = glob(os.path.join(dataset_path, index1, index1, '*'+file_ext))[0]
+                    # path_sample2 = glob(os.path.join(dataset_path, index2, index2, '*'+file_ext))[0]
+                    path_sample1 = glob(os.path.join(dataset_path, index1, '*'+file_ext))[0]
+                    path_sample2 = glob(os.path.join(dataset_path, index2, '*'+file_ext))[0]
 
                     pair = (label, path_sample1, path_sample2)
                     # print('global_pair_idx:', global_pair_idx, '   ', 'pair:', pair)
 
-                    global_pair_idx += 1 
-                    all_pairs_paths_label.append(pair) 
+                    global_pair_idx += 1
+                    all_pairs_paths_label.append(pair)
 
                 folds_indexes.append((start_fold_idx, end_fold_idx))
 

@@ -86,12 +86,14 @@ class VerificationTester:
 
 
         # AgeDB
-        self.AGEDB_POINT_CLOUDS = '/datasets2/pbqv20/agedb_bkp/agedb_3d'                 # duo
+        # self.AGEDB_POINT_CLOUDS = '/datasets2/pbqv20/agedb_bkp/agedb_3d'               # duo
+        self.AGEDB_POINT_CLOUDS = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/lfw_cfp_agedb/agedb/imgs'  # duo
         self.AGEDB_BENCHMARK_VERIF_PAIRS_LIST = '/datasets2/pbqv20/agedb_bkp/pairs.txt'  # duo
 
 
         # CFP
-        self.CFP_POINT_CLOUDS = '/datasets2/pbqv20/cfp_bkp/cfp_3d'                       # duo
+        # self.CFP_POINT_CLOUDS = '/datasets2/pbqv20/cfp_bkp/cfp_3d'                     # duo
+        self.CFP_POINT_CLOUDS = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/lfw_cfp_agedb/cfp/imgs'  # duo
         self.CFP_BENCHMARK_VERIF_PAIRS_LIST = '/datasets2/pbqv20/cfp_bkp/pairs.txt'      # duo
 
         
