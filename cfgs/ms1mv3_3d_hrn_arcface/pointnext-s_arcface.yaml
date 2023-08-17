@@ -49,5 +49,5 @@ model:
       norm: 'bn1d'
 
 wandb:
-  # use_wandb: True
-  use_wandb: False
+  use_wandb: True
+  # use_wandb: False
