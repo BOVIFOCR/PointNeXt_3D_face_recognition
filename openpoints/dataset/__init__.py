@@ -10,4 +10,5 @@ from .shapenetpart import *
 from .scannetv2 import *
 from .synfacesGPMM import *
 from .ms1mv3_3d import *
+from .ms1mv3_3d_hrn import *
 from .webface import *
