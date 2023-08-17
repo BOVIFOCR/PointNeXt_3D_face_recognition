@@ -1,11 +1,11 @@
-import os, logging, csv, numpy as np, wandb
+import os, sys, logging, csv, numpy as np, wandb
 from tqdm import tqdm
 import torch, torch.nn as nn
 from torch import distributed as dist
 from torch.utils.tensorboard import SummaryWriter
 from openpoints.utils import set_random_seed, save_checkpoint, load_checkpoint, resume_checkpoint, setup_logger_dist, \
     cal_model_parm_nums, Wandb
-from openpoints.utils import AverageMeter, ConfusionMatrix, get_mious, save_batch_faces
+from openpoints.utils import AverageMeter, ConfusionMatrix, get_mious
 from openpoints.dataset import build_dataloader_from_cfg
 from openpoints.transforms import build_transforms_from_cfg
 from openpoints.optim import build_optimizer_from_cfg
@@ -15,6 +15,7 @@ from openpoints.models import build_model_from_cfg
 from openpoints.models.layers import furthest_point_sample, fps
 
 from examples.face_verification.run_verification_test_one_dataset import VerificationTester
+from openpoints.utils.save_batch_faces import save_batch_faces, save_batch_samples
 
 
 def get_features_by_keys(input_features_dim, data):
@@ -212,7 +213,7 @@ def main(gpu, cfg, profile=False):
         is_best = False
         if epoch % cfg.val_freq == 0:
             val_macc, val_oa, val_accs, val_cm = validate_fn(
-                model, val_loader, cfg)
+                model, val_loader, epoch, cfg)
             is_best = val_oa > best_val
             if is_best:
                 best_val = val_oa
@@ -256,7 +257,7 @@ def main(gpu, cfg, profile=False):
         print('------------------------\n')   # Bernardo
 
     # test the last epoch
-    test_macc, test_oa, test_accs, test_cm = validate(model, test_loader, cfg)
+    test_macc, test_oa, test_accs, test_cm = validate(model, test_loader, cfg.epochs+1, cfg)
     print_cls_results(test_oa, test_macc, test_accs, best_epoch, cfg)
     if writer is not None:
         writer.add_scalar('test_oa', test_oa, epoch)
@@ -265,7 +266,7 @@ def main(gpu, cfg, profile=False):
     # test the best validataion model
     best_epoch, _ = load_checkpoint(model, pretrained_path=os.path.join(
         cfg.ckpt_dir, f'{cfg.run_name}_ckpt_best.pth'))
-    test_macc, test_oa, test_accs, test_cm = validate(model, test_loader, cfg)
+    test_macc, test_oa, test_accs, test_cm = validate(model, test_loader, cfg.epochs+1, cfg)
     if writer is not None:
         writer.add_scalar('test_oa', test_oa, best_epoch)
         writer.add_scalar('test_macc', test_macc, best_epoch)
@@ -300,19 +301,14 @@ def train_one_epoch(model, train_loader, optimizer, scheduler, epoch, cfg):
 
         data['pos'] = points[:, :, :3].contiguous()
         data['x'] = points[:, :, :cfg.model.in_channels].transpose(1, 2).contiguous()
-        
-        save_faces_path = cfg.save_faces_path
-        if idx == 0:
-            try:
-                save_batch_faces(data,save_faces_path)
-            except:
-                print("save_faces_path not included")
-        
-        logits, loss = model.get_logits_loss(data, target) if not hasattr(model, 'module') else model.module.get_logits_loss(data, target)
-        
 
+        if epoch == 1 and idx == 0:
+            print(f'\nSaving train samples of epoch={epoch} batch={idx} in \'{cfg.run_dir}\'')
+            save_batch_samples(os.path.join(cfg.run_dir, 'train_samples'), epoch, idx, data['pos'])
+
+        logits, loss = model.get_logits_loss(data, target) if not hasattr(model, 'module') else model.module.get_logits_loss(data, target)
         loss.backward()
-        
+
         # optimize
         if num_iter == cfg.step_per_update:
             if cfg.get('grad_norm_clip') is not None and cfg.grad_norm_clip > 0.:
@@ -335,7 +331,7 @@ def train_one_epoch(model, train_loader, optimizer, scheduler, epoch, cfg):
 
 
 @torch.no_grad()
-def validate(model, val_loader, cfg):
+def validate(model, val_loader, epoch, cfg):
     model.eval()  # set model to eval mode
     cm = ConfusionMatrix(num_classes=cfg.num_classes)
     npoints = cfg.num_points
@@ -354,6 +350,11 @@ def validate(model, val_loader, cfg):
 
         data['pos'] = points[:, :, :3].contiguous()
         data['x'] = points[:, :, :cfg.model.in_channels].transpose(1, 2).contiguous()
+
+        if epoch == 1 and idx == 0:
+            print(f'\nSaving val samples of epoch={epoch} batch={idx} in \'{cfg.run_dir}\'')
+            save_batch_samples(os.path.join(cfg.run_dir, 'val_samples'), epoch, idx, data['pos'])
+
         logits = model(data)
         cm.update(logits.argmax(dim=1), target)
 

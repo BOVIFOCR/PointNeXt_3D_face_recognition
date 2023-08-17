@@ -99,7 +99,7 @@ class MS1MV3_3D_HRN(Dataset):
 
     def __getitem__(self, item):
         pointcloud, cls = self._get_item(item)
-        pointcloud = pointcloud[:self.num_points]
+        # pointcloud = pointcloud[:self.num_points]
         label = cls
 
         if self.partition == 'train':
@@ -212,6 +212,23 @@ class MS1MV3_3D_HRN(Dataset):
         return mesh
 
 
+    # def _readply(self, file):
+    #     with open(file, 'rb') as f:
+    #         plydata = PlyData.read(f)
+    #         num_verts = plydata['vertex'].count
+    #         vertices = np.zeros(shape=(num_verts, 3), dtype=np.float32)
+    #         vertices[:,0] = plydata['vertex'].data['x']
+    #         vertices[:,1] = plydata['vertex'].data['y']
+    #         vertices[:,2] = plydata['vertex'].data['z']
+    #         # vertices[:,3] = plydata['vertex'].data['red']
+    #         # vertices[:,4] = plydata['vertex'].data['green']
+    #         # vertices[:,5] = plydata['vertex'].data['blue']
+    #         # print('plydata:', plydata)
+    #         # print('vertices:', vertices)
+    #         # sys.exit(0)
+    #         return vertices  
+
+
     def _get_item(self, index): 
         fn = self.data[index]
         cls = self.classes[self.data[index][0]]
@@ -248,26 +265,11 @@ class MS1MV3_3D_HRN(Dataset):
             self.cache[index] = (point_set, cls)
         '''
         return point_set, cls
-    
-    # def _readply(self, file):
-    #     with open(file, 'rb') as f:
-    #         plydata = PlyData.read(f)
-    #         num_verts = plydata['vertex'].count
-    #         vertices = np.zeros(shape=(num_verts, 3), dtype=np.float32)
-    #         vertices[:,0] = plydata['vertex'].data['x']
-    #         vertices[:,1] = plydata['vertex'].data['y']
-    #         vertices[:,2] = plydata['vertex'].data['z']
-    #         # vertices[:,3] = plydata['vertex'].data['red']
-    #         # vertices[:,4] = plydata['vertex'].data['green']
-    #         # vertices[:,5] = plydata['vertex'].data['blue']
-    #         # print('plydata:', plydata)
-    #         # print('vertices:', vertices)
-    #         # sys.exit(0)
-    #         return vertices  
+
 
     def pc_normalize(self,pc):
         # Bernardo
-        pc /= 100
+        # pc /= 100
         pc = (pc - pc.min()) / (pc.max() - pc.min())
 
         # l = pc.shape[0]
