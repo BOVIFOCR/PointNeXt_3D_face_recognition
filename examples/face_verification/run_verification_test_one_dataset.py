@@ -98,7 +98,7 @@ class VerificationTester:
         # self.CFP_POINT_CLOUDS = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/lfw_cfp_agedb/cfp/imgs'  # duo
         # self.CFP_BENCHMARK_VERIF_PAIRS_LIST = '/datasets2/pbqv20/cfp_bkp/pairs.txt'      # duo
         self.CFP_POINT_CLOUDS = '/datasets1/bjgbiesseck/lfw_cfp_agedb/3D_reconstruction_HRN/cfp/imgs'  # duo
-        self.CFP_BENCHMARK_VERIF_PAIRS_LIST = '/datasets1/bjgbiesseck/lfw_cfp_agedb/rgb/agedb/pair.list'      # duo
+        self.CFP_BENCHMARK_VERIF_PAIRS_LIST = '/datasets1/bjgbiesseck/lfw_cfp_agedb/rgb/cfp/pair.list'      # duo
 
         
 
