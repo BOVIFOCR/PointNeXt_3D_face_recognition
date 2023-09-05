@@ -63,8 +63,10 @@ class VerificationTester:
 
     def __init__(self):
         # LFW - duo - benchmark test set (6000 face pairs)
-        self.LFW_POINT_CLOUDS = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/lfw'
-        self.LFW_BENCHMARK_VERIF_PAIRS_LIST = '/datasets1/bjgbiesseck/lfw/pairs.txt'
+        # self.LFW_POINT_CLOUDS = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/lfw'
+        # self.LFW_BENCHMARK_VERIF_PAIRS_LIST = '/datasets1/bjgbiesseck/lfw/pairs.txt'
+        self.LFW_POINT_CLOUDS = '/datasets1/bjgbiesseck/lfw_cfp_agedb/3D_reconstruction_HRN/lfw/imgs'   # duo
+        self.LFW_BENCHMARK_VERIF_PAIRS_LIST = '/datasets1/bjgbiesseck/lfw_cfp_agedb/rgb/lfw/pair.list'  # duo
 
         # LFW - diolkos - benchmark test set (6000 face pairs)
         # self.LFW_POINT_CLOUDS = '/nobackup/unico/datasets/face_recognition/MICA_3Dreconstruction/lfw'
@@ -86,15 +88,17 @@ class VerificationTester:
 
 
         # AgeDB
-        # self.AGEDB_POINT_CLOUDS = '/datasets2/pbqv20/agedb_bkp/agedb_3d'               # duo
-        self.AGEDB_POINT_CLOUDS = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/lfw_cfp_agedb/agedb/imgs'  # duo
-        self.AGEDB_BENCHMARK_VERIF_PAIRS_LIST = '/datasets2/pbqv20/agedb_bkp/pairs.txt'  # duo
+        # self.AGEDB_POINT_CLOUDS = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/lfw_cfp_agedb/agedb/imgs'  # duo
+        # self.AGEDB_BENCHMARK_VERIF_PAIRS_LIST = '/datasets2/pbqv20/agedb_bkp/pairs.txt'  # duo
+        self.AGEDB_POINT_CLOUDS = '/datasets1/bjgbiesseck/lfw_cfp_agedb/3D_reconstruction_HRN/agedb/imgs'   # duo
+        self.AGEDB_BENCHMARK_VERIF_PAIRS_LIST = '/datasets1/bjgbiesseck/lfw_cfp_agedb/rgb/agedb/pair.list'  # duo
 
 
         # CFP
-        # self.CFP_POINT_CLOUDS = '/datasets2/pbqv20/cfp_bkp/cfp_3d'                     # duo
-        self.CFP_POINT_CLOUDS = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/lfw_cfp_agedb/cfp/imgs'  # duo
-        self.CFP_BENCHMARK_VERIF_PAIRS_LIST = '/datasets2/pbqv20/cfp_bkp/pairs.txt'      # duo
+        # self.CFP_POINT_CLOUDS = '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/lfw_cfp_agedb/cfp/imgs'  # duo
+        # self.CFP_BENCHMARK_VERIF_PAIRS_LIST = '/datasets2/pbqv20/cfp_bkp/pairs.txt'      # duo
+        self.CFP_POINT_CLOUDS = '/datasets1/bjgbiesseck/lfw_cfp_agedb/3D_reconstruction_HRN/cfp/imgs'  # duo
+        self.CFP_BENCHMARK_VERIF_PAIRS_LIST = '/datasets1/bjgbiesseck/lfw_cfp_agedb/rgb/cfp/pair.list'      # duo
 
         
 
@@ -160,8 +164,10 @@ class VerificationTester:
 
     def load_dataset(self, dataset_name='lfw', verbose=True):
         if dataset_name.upper() == 'LFW':
-            file_ext = 'mesh_centralized-nosetip_with-normals_filter-radius=100.npy'
-            all_pairs_paths_label, folds_indexes, pos_pair_label, neg_pair_label = LFW_Pairs_3DReconstructedMICA().load_pointclouds_pairs_with_labels(self.LFW_POINT_CLOUDS, self.LFW_BENCHMARK_VERIF_PAIRS_LIST, file_ext)
+            # file_ext = 'mesh_centralized-nosetip_with-normals_filter-radius=100.npy'
+            # all_pairs_paths_label, folds_indexes, pos_pair_label, neg_pair_label = LFW_Pairs_3DReconstructedMICA().load_pointclouds_pairs_with_labels(self.LFW_POINT_CLOUDS, self.LFW_BENCHMARK_VERIF_PAIRS_LIST, file_ext)
+            file_ext = '_high_mesh_10000points.npy'
+            all_pairs_paths_label, folds_indexes, pos_pair_label, neg_pair_label = MagVerif_Pairs_3DReconstructedMICA().load_pointclouds_pairs_with_labels(self.LFW_POINT_CLOUDS, self.LFW_BENCHMARK_VERIF_PAIRS_LIST, file_ext)
 
         elif dataset_name.upper() == 'MLFW':
             # file_ext = 'mesh.ply'
@@ -173,11 +179,13 @@ class VerificationTester:
             all_pairs_paths_label, folds_indexes, pos_pair_label, neg_pair_label = MagVerif_Pairs_3DReconstructedMICA().load_pointclouds_pairs_with_labels(self.MagVerif_POINT_CLOUDS, self.MagVerif_BENCHMARK_VERIF_PAIRS_LIST, file_ext)
 
         elif dataset_name.upper() == 'AGEDB':
-            file_ext = 'mesh_centralized-nosetip_with-normals_filter-radius=100.npy'
+            # file_ext = 'mesh_centralized-nosetip_with-normals_filter-radius=100.npy'
+            file_ext = '_high_mesh_10000points.npy'
             all_pairs_paths_label, folds_indexes, pos_pair_label, neg_pair_label = MagVerif_Pairs_3DReconstructedMICA().load_pointclouds_pairs_with_labels(self.AGEDB_POINT_CLOUDS, self.AGEDB_BENCHMARK_VERIF_PAIRS_LIST, file_ext)
 
         elif dataset_name.upper() == 'CFP':
-            file_ext = 'mesh_centralized-nosetip_with-normals_filter-radius=100.npy'
+            # file_ext = 'mesh_centralized-nosetip_with-normals_filter-radius=100.npy'
+            file_ext = '_high_mesh_10000points.npy'
             all_pairs_paths_label, folds_indexes, pos_pair_label, neg_pair_label = MagVerif_Pairs_3DReconstructedMICA().load_pointclouds_pairs_with_labels(self.CFP_POINT_CLOUDS, self.CFP_BENCHMARK_VERIF_PAIRS_LIST, file_ext)
 
         else:

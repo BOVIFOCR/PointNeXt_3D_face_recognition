@@ -136,8 +136,22 @@ class TreeMagVerif_3DReconstructedMICA:
                     # print('os.path.join(dataset_path, index1, \'*\'+file_ext):', os.path.join(dataset_path, index1, '*'+file_ext))
                     # path_sample1 = glob(os.path.join(dataset_path, index1, index1, '*'+file_ext))[0]
                     # path_sample2 = glob(os.path.join(dataset_path, index2, index2, '*'+file_ext))[0]
-                    path_sample1 = glob(os.path.join(dataset_path, index1, '*'+file_ext))[0]
-                    path_sample2 = glob(os.path.join(dataset_path, index2, '*'+file_ext))[0]
+                    dir_sample1 = os.path.join(dataset_path, index1)
+                    dir_sample2 = os.path.join(dataset_path, index2)
+                    path_sample1 = glob(os.path.join(dir_sample1, '*'+file_ext))
+                    path_sample2 = glob(os.path.join(dir_sample2, '*'+file_ext))
+
+                    if len(path_sample1) == 0:
+                        raise Exception(f'Error, no file found with pattern \'{file_ext}\' in path \'{dir_sample1}\'')
+                    elif len(path_sample2) == 0:
+                        raise Exception(f'Error, no file found with pattern \'{file_ext}\' in path \'{dir_sample2}\'')
+                    elif len(path_sample1) > 1:
+                        raise Exception(f'Error, multiple files found with pattern \'{file_ext}\' in path \'{dir_sample1}\':\nFound {path_sample1}')
+                    elif len(path_sample2) > 1:
+                        raise Exception(f'Error, multiple files found with pattern \'{file_ext}\' in path \'{dir_sample2}\':\nFound {path_sample2}')
+
+                    path_sample1 = path_sample1[0]
+                    path_sample2 = path_sample2[0]
 
                     pair = (label, path_sample1, path_sample2)
                     # print('global_pair_idx:', global_pair_idx, '   ', 'pair:', pair)

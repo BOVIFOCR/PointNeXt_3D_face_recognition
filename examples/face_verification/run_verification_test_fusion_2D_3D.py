@@ -68,7 +68,7 @@ class LateFusionVerificationTester(VerificationTester):
 
 
     def fuse_scores(self, distances1, distances2, method='mean'):
-        assert distances1.shape[0] == distances2.shape[0]
+        assert distances1.shape[0] == distances2.shape[0], f'Error, \'distances1.shape[0]\' is different of \'distances2.shape[0]\'. distances1.shape[0]={distances1.shape[0]} while distances2.shape[0]={distances2.shape[0]}'
         distances1 /= np.max(distances1)
         distances2 /= np.max(distances2)
 
