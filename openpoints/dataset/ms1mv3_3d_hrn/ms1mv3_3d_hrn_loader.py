@@ -34,7 +34,8 @@ class MS1MV3_3D_HRN(Dataset):
         dir_level=2
         min_samples=2
         max_samples=-1
-        file_ext = '_hrn_high_mesh.obj'
+        # file_ext = '_hrn_high_mesh.obj'
+        file_ext = '_hrn_high_mesh_10000points.npy'
         # file_ext = '.ply'
 
         logging.info(f'loading dataset...')
