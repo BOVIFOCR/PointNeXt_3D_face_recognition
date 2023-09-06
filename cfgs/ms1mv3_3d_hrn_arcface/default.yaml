@@ -7,7 +7,7 @@ num_classes: 22
 # num_classes: 93424
 
 wandb:
-  project: COLLAPSE-TESTS_PointNeXt_MS1MV3-3D-HRN_22classes
+  project: PointNeXt_MS1MV3-3D-HRN_22classes
   # project: PointNeXt_MS1MV3-3D-HRN_1000classes
   # project: PointNeXt_MS1MV3-3D-HRN_2000classes
   # project: PointNeXt_MS1MV3-3D-HRN_5000classes
@@ -38,27 +38,27 @@ dataset:
 
   train:
     split: train
-    num_points: 1024  # in training, use sampled 1024 points for data augmentation.
+    # num_points: 1024  # in training, use sampled 1024 points for data augmentation.
     # num_points: 2048
-    # num_points: 2500      # For MS1MV3-3D-HRN
+    num_points: 2500      # For MS1MV3-3D-HRN
     # num_points: 5000    # For MS1MV3-3D-HRN
     # num_points: 10000   # For MS1MV3-3D-HRN
     # num_points: 30000   # For MS1MV3-3D-HRN
     # num_points: 50000   # For MS1MV3-3D-HRN
   val:
     split: test
-    num_points: 1024  # in testing, use uniformly pre-sampled 1024 points for evaluation (following https://github.com/lulutang0608/Point-BERT)
+    # num_points: 1024  # in testing, use uniformly pre-sampled 1024 points for evaluation (following https://github.com/lulutang0608/Point-BERT)
     # num_points: 2048
-    # num_points: 2500      # For MS1MV3-3D-HRN
+    num_points: 2500      # For MS1MV3-3D-HRN
     # num_points: 5000    # For MS1MV3-3D-HRN
     # num_points: 10000   # For MS1MV3-3D-HRN
     # num_points: 30000   # For MS1MV3-3D-HRN
     # num_points: 50000   # For MS1MV3-3D-HRN
 
 # Dataset Related
-num_points: 1024  # number of poins actually used in training and evaluation
+# num_points: 1024  # number of poins actually used in training and evaluation
 # num_points: 2048
-# num_points: 2500      # For MS1MV3-3D-HRN
+num_points: 2500      # For MS1MV3-3D-HRN
 # num_points: 5000    # For MS1MV3-3D-HRN
 # num_points: 10000   # For MS1MV3-3D-HRN
 # num_points: 30000   # For MS1MV3-3D-HRN
@@ -98,6 +98,7 @@ dataloader:
 # ---------------------------------------------------------------------------- #
 
 # Training parameters
+# lr: 0.005
 lr: 0.001
 # lr: 0.0005
 # lr: 0.00025
@@ -112,8 +113,8 @@ warmup_epochs: 0
 min_lr: null
 
 optimizer:
- # NAME: 'adamw'   # original
- NAME: 'sgd'
+ NAME: 'adamw'   # original
+ # NAME: 'sgd'
  weight_decay: 0.05
 
 grad_norm_clip: 1
