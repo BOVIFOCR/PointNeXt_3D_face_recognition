@@ -1,5 +1,5 @@
 import __init__
-import os, argparse, yaml, numpy as np
+import os, sys, argparse, yaml, numpy as np
 from torch import multiprocessing as mp
 from examples.classification.train import main as train
 from examples.classification.pretrain import main as pretrain
