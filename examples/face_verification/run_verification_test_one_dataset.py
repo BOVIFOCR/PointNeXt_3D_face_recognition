@@ -20,11 +20,13 @@ try:
     from .dataloaders.lfw_pairs_3Dreconstructed_MICA import LFW_Pairs_3DReconstructedMICA
     from .dataloaders.mlfw_pairs_3Dreconstructed_MICA import MLFW_Pairs_3DReconstructedMICA
     from .dataloaders.magVerif_pairs_3Dreconstructed_MICA import MagVerif_Pairs_3DReconstructedMICA
+    from .dataloaders.bupt_pairs_3Dreconstructed_MICA import BUPT_Pairs_3DReconstructedMICA
 
 except ImportError as e:
     from dataloaders.lfw_pairs_3Dreconstructed_MICA import LFW_Pairs_3DReconstructedMICA
     from dataloaders.mlfw_pairs_3Dreconstructed_MICA import MLFW_Pairs_3DReconstructedMICA
     from dataloaders.magVerif_pairs_3Dreconstructed_MICA import MagVerif_Pairs_3DReconstructedMICA
+    from dataloaders.bupt_pairs_3Dreconstructed_MICA import BUPT_Pairs_3DReconstructedMICA
 
 np.random.seed(440)   # Bernardo
 
@@ -99,6 +101,11 @@ class VerificationTester:
         # self.CFP_BENCHMARK_VERIF_PAIRS_LIST = '/datasets2/pbqv20/cfp_bkp/pairs.txt'      # duo
         self.CFP_POINT_CLOUDS = '/datasets1/bjgbiesseck/lfw_cfp_agedb/3D_reconstruction_HRN/cfp/imgs'  # duo
         self.CFP_BENCHMARK_VERIF_PAIRS_LIST = '/datasets1/bjgbiesseck/lfw_cfp_agedb/rgb/cfp/pair.list'      # duo
+
+
+        # BUPT
+        self.BUPT_MICA_POINT_CLOUDS = '/datasets2/frcsyn_wacv2024/datasets/3D_reconstruction_MICA/real/3_BUPT-BalancedFace/race_per_7000_crops_112x112/output'   # duo
+        self.BUPT_VERIF_PAIRS_LIST = '/datasets2/frcsyn_wacv2024/comparison_files/comparison_files/sub-tasks_1.1_1.2/bupt_comparison.txt'                        # duo
 
         
 
@@ -187,6 +194,11 @@ class VerificationTester:
             # file_ext = 'mesh_centralized-nosetip_with-normals_filter-radius=100.npy'
             file_ext = '_high_mesh_10000points.npy'
             all_pairs_paths_label, folds_indexes, pos_pair_label, neg_pair_label = MagVerif_Pairs_3DReconstructedMICA().load_pointclouds_pairs_with_labels(self.CFP_POINT_CLOUDS, self.CFP_BENCHMARK_VERIF_PAIRS_LIST, file_ext)
+
+        elif dataset_name.upper() == 'BUPT_MICA':
+            # file_ext = 'mesh_centralized_nosetip_croped_radius=100.obj'
+            file_ext = 'mesh_centralized_nosetip_croped_radius=100.npy'
+            all_pairs_paths_label, folds_indexes, pos_pair_label, neg_pair_label = BUPT_Pairs_3DReconstructedMICA().load_pointclouds_pairs_with_labels(self.BUPT_MICA_POINT_CLOUDS, self.BUPT_VERIF_PAIRS_LIST, file_ext)
 
         else:
             print(f'\nError: dataloader for dataset \'{dataset_name}\' not implemented!\n')
