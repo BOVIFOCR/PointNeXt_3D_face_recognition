@@ -12,3 +12,4 @@ from .synfacesGPMM import *
 from .ms1mv3_3d import *
 from .ms1mv3_3d_hrn import *
 from .webface import *
+from .casia_webface_3d_mica import *
