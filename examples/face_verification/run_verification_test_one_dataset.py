@@ -276,23 +276,23 @@ class VerificationTester:
         distances = torch.zeros(int(face_embedd.size()[0]/2))
         for i in range(0, face_embedd.size()[0], 2):
             embedd0, embedd1 = face_embedd[i], face_embedd[i+1]
-            distances[int(i/2)] = torch.sum( torch.square( F.normalize(torch.unsqueeze(embedd0, 0)) - F.normalize(torch.unsqueeze(embedd1, 0)) ) )
-        # if verbose:
-        #     print('distances:', distances)
-        #     print('distances.size():', distances.size())
+            distances[int(i/2)] = torch.sum( torch.square( F.normalize(torch.unsqueeze(embedd0, 0)) - F.normalize(torch.unsqueeze(embedd1, 0)) ), 1) / 2.
         return distances
-    
 
-    def compute_embeddings_cosine_distance(self, face_embedd, verbose=True):
+
+    def compute_embeddings_cosine_similarity(self, face_embedd, verbose=True):
         assert face_embedd.size()[0] % 2 == 0
         distances = torch.zeros(int(face_embedd.size()[0]/2))
         for i in range(0, face_embedd.size()[0], 2):
             embedd0, embedd1 = face_embedd[i], face_embedd[i+1]
-            # distances[int(i/2)] = torch.sum( torch.square( F.normalize(torch.unsqueeze(embedd0, 0)) - F.normalize(torch.unsqueeze(embedd1, 0)) ) )
-            distances[int(i/2)] = 1 - torch.dot(embedd0, embedd1)/(torch.linalg.norm(embedd0)*torch.linalg.norm(embedd1))
-        # if verbose:
-        #     print('distances:', distances)
-        #     print('distances.size():', distances.size())
+            embedd0, embedd1 = F.normalize(torch.unsqueeze(embedd0, 0))[0], F.normalize(torch.unsqueeze(embedd1, 0))[0]
+            distances[int(i/2)] = torch.dot(embedd0, embedd1)/(torch.linalg.norm(embedd0)*torch.linalg.norm(embedd1))
+        return distances
+
+
+    def compute_embeddings_cosine_distance(self, face_embedd, verbose=True):
+        assert face_embedd.size()[0] % 2 == 0
+        distances = 1. - self.compute_embeddings_cosine_similarity(face_embedd)
         return distances
 
 
@@ -403,8 +403,9 @@ class VerificationTester:
                 if verbose:
                     print('computing distances')
                 
-                dist = self.compute_embeddings_distance_insightface(embedd, verbose=verbose)
-                # dist = self.compute_embeddings_cosine_distance(embedd, verbose=verbose)
+                # dist = self.compute_embeddings_distance_insightface(embedd, verbose=verbose)
+                dist = self.compute_embeddings_cosine_distance(embedd, verbose=verbose)
+                # dist = self.compute_embeddings_cosine_similarity(embedd, verbose=verbose)
                 
                 if verbose:
                     print('dist.size():', dist.size())
@@ -706,18 +707,10 @@ class VerificationTester:
 
     def do_k_fold_test(self, folds_pair_distances, folds_pair_labels, folds_indexes, verbose=True):
         thresholds = np.arange(0, 4, 0.01)
-        # tpr, fpr, accuracy = self.calculate_roc(thresholds, folds_pair_distances, folds_pair_labels, nrof_folds=10, verbose=verbose)
         tpr, fpr, accuracy, tp_idx, fp_idx, tn_idx, fn_idx = self.calculate_roc(thresholds, folds_pair_distances, folds_pair_labels, nrof_folds=10, verbose=verbose)
-        # print('tp_idx.shape:', tp_idx.shape)
-        # print('fp_idx.shape:', fp_idx.shape)
-        # print('tn_idx.shape:', tn_idx.shape)
-        # print('fn_idx.shape:', fn_idx.shape)
 
         thresholds = np.arange(0, 4, 0.001)
-        # tar_mean, tar_std, far_mean = self.calculate_tar(thresholds, folds_pair_distances, folds_pair_labels, far_target=1e-3, nrof_folds=10, verbose=verbose)
         tar_mean, tar_std, far_mean, ta_idx, fa_idx = self.calculate_tar(thresholds, folds_pair_distances, folds_pair_labels, far_target=1e-3, nrof_folds=10, verbose=verbose)
-        # print('ta_idx.shape:', ta_idx.shape)
-        # print('fa_idx.shape:', fa_idx.shape)
 
         thresholds = np.arange(0, 4, 0.0001)
         fmr_targets = [1e-2, 1e-3, 1e-4]
@@ -731,7 +724,6 @@ class VerificationTester:
         if verbose:
             print('------------')
 
-        # return tpr, fpr, accuracy, tar_mean, tar_std, far_mean
         return tpr, fpr, accuracy, tar_mean, tar_std, far_mean, fnmr_mean, fnmr_std, fmr_mean, \
             tp_idx, fp_idx, tn_idx, fn_idx, ta_idx, fa_idx
 
@@ -749,8 +741,8 @@ class VerificationTester:
         folds_pair_distances = folds_pair_distances.cpu().detach().numpy()
 
         if args.save_dist:
-            file_dist_name = 'dist_dataset=' + args.dataset + '_pointnet++_model=' + args.cfg.split('/')[-2] + '.npy'
-            file_labels_name = 'labels_dataset=' + args.dataset + '_pointnet++_model=' + args.cfg.split('/')[-2] + '.npy'
+            file_dist_name = 'dist_dataset=' + args.dataset + '_pointnext_model=' + args.cfg.split('/')[-2] + '.npy'
+            file_labels_name = 'labels_dataset=' + args.dataset + '_pointnext_model=' + args.cfg.split('/')[-2] + '.npy'
             path_dists = os.path.join(os.path.dirname(args.cfg), file_dist_name)
             path_labels = os.path.join(os.path.dirname(args.cfg), file_labels_name)
             print(f'\nSaving distances at \'{path_dists}\' ...')
