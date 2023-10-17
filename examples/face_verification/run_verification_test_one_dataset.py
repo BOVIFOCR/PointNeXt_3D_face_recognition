@@ -286,7 +286,7 @@ class VerificationTester:
         for i in range(0, face_embedd.size()[0], 2):
             embedd0, embedd1 = face_embedd[i], face_embedd[i+1]
             embedd0, embedd1 = F.normalize(torch.unsqueeze(embedd0, 0))[0], F.normalize(torch.unsqueeze(embedd1, 0))[0]
-            distances[int(i/2)] = torch.dot(embedd0, embedd1)/(torch.linalg.norm(embedd0)*torch.linalg.norm(embedd1))
+            distances[int(i/2)] = torch.maximum(torch.dot(embedd0, embedd1)/(torch.linalg.norm(embedd0)*torch.linalg.norm(embedd1)), torch.tensor(0.0)).float()
         return distances
 
 
