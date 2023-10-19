@@ -1,34 +1,40 @@
 
 # num_classes: 100
-num_classes: 10572
+num_classes: 5000
+# num_classes: 10572
 
 wandb:
   # project: PointNeXt_CASIA-WEBFACE-3D-MICA_100classes
-  project: PointNeXt_CASIA-WEBFACE-3D-MICA_10572classes (whole dataset)
+  project: PointNeXt_CASIA-WEBFACE-3D-MICA_5000classes
+  # project: PointNeXt_CASIA-WEBFACE-3D-MICA_10572classes (whole dataset)
 
 dataset:
   common:
     # NAME: CASIA_WEBFACE_3D_MICA_100subj      # 100 CLASSES (toy example)
     # data_dir: '/datasets2/frcsyn_wacv2024/datasets/3D_reconstruction_MICA/real/1_CASIA-WebFace/output_100class'  # duo
 
-    NAME: CASIA_WEBFACE_3D_MICA_10572subj      # 10572 CLASSES (whole dataset)
+    NAME: CASIA_WEBFACE_3D_MICA_5000subj      # 100 CLASSES (toy example)
+    # data_dir: '/datasets2/frcsyn_wacv2024/datasets/3D_reconstruction_MICA/real/1_CASIA-WebFace/output_5000class'  # duo
+    data_dir: '/nobackup/unico/frcsyn_wacv2024/datasets/3D_reconstruction_MICA/real/1_CASIA-WebFace/imgs_crops_112x112/output_5000class'  # diolkos
+
+    # NAME: CASIA_WEBFACE_3D_MICA_10572subj      # 10572 CLASSES (whole dataset)
     # data_dir: '/datasets2/frcsyn_wacv2024/datasets/3D_reconstruction_MICA/real/1_CASIA-WebFace/imgs_crops_112x112/output'  # duo
-    data_dir: '/groups/unico/frcsyn_wacv2024/datasets/3D_reconstruction_MICA/real/1_CASIA-WebFace/imgs_crops_112x112/output'
+    # data_dir: '/groups/unico/frcsyn_wacv2024/datasets/3D_reconstruction_MICA/real/1_CASIA-WebFace/imgs_crops_112x112/output'
 
   train:
     split: train
-    # num_points: 1024  # in training, use sampled 1024 points for data augmentation.
-    num_points: 2048
+    num_points: 1024  # in training, use sampled 1024 points for data augmentation.
+    # num_points: 2048
     # num_points: 2900  # Default value for MS1MV3-3D reconstructed by MICA
   val:
     split: test
-    # num_points: 1024  # in testing, use uniformly pre-sampled 1024 points for evaluation (following https://github.com/lulutang0608/Point-BERT)
-    num_points: 2048
+    num_points: 1024  # in testing, use uniformly pre-sampled 1024 points for evaluation (following https://github.com/lulutang0608/Point-BERT)
+    # num_points: 2048
     # num_points: 2900  # Default value for MS1MV3-3D reconstructed by MICA
 
 # Dataset Related
-# num_points: 1024  # number of poins actually used in training and evaluation
-num_points: 2048
+num_points: 1024  # number of poins actually used in training and evaluation
+# num_points: 2048
 # num_points: 2900  # Default value for MS1MV3-3D reconstructed by MICA
 
 # Bernardo
@@ -45,8 +51,8 @@ datatransforms:
   kwargs:
     shift: [0.2, 0.2, 0.2]
 # batch_size: 32     # original
-# batch_size: 64
-batch_size: 128
+batch_size: 64
+# batch_size: 128
 # batch_size: 16
 # batch_size: 8
 dataloader:
@@ -82,8 +88,8 @@ grad_norm_clip: 1
 criterion_args:   # args passed to openpoints/loss/build.py -> ArcFace.__init__()
   NAME: ArcFace   # for face recognition
   # margin: 0.25
-  # margin: 0.1
-  margin: 0.01
+  margin: 0.1
+  # margin: 0.01
   scale: 32
 
 # ---------------------------------------------------------------------------- #

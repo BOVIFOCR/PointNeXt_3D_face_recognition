@@ -107,6 +107,8 @@ class VerificationTester:
         # BUPT
         # self.BUPT_MICA_POINT_CLOUDS = '/datasets2/frcsyn_wacv2024/datasets/3D_reconstruction_MICA/real/3_BUPT-BalancedFace/race_per_7000_crops_112x112/output'    # duo
         # self.BUPT_VERIF_PAIRS_LIST = '/datasets2/frcsyn_wacv2024/comparison_files/comparison_files/sub-tasks_1.1_1.2/bupt_comparison.txt'                         # duo
+        # self.BUPT_MICA_POINT_CLOUDS = '/groups/unico/frcsyn_wacv2024/datasets/3D_reconstruction_MICA/real/3_BUPT-BalancedFace/race_per_7000_crops_112x112/output'   # daugman
+        # self.BUPT_VERIF_PAIRS_LIST = '/groups/unico/frcsyn_wacv2024/comparison_files/comparison_files/sub-tasks_1.1_1.2/bupt_comparison.txt'                        # daugman
         self.BUPT_MICA_POINT_CLOUDS = '/groups/unico/frcsyn_wacv2024/datasets/3D_reconstruction_MICA/real/3_BUPT-BalancedFace/race_per_7000_crops_112x112/output'   # daugman
         self.BUPT_VERIF_PAIRS_LIST = '/groups/unico/frcsyn_wacv2024/comparison_files/comparison_files/sub-tasks_1.1_1.2/bupt_comparison.txt'                        # daugman
 
@@ -740,7 +742,7 @@ class VerificationTester:
         folds_pair_distances = self.compute_set_distances(model, folds_pair_cache, batch_size, verbose=verbose)
         folds_pair_distances = folds_pair_distances.cpu().detach().numpy()
 
-        if args.save_dist:
+        if not args is None and args.save_dist:
             file_dist_name = 'dist_dataset=' + args.dataset + '_pointnext_model=' + args.cfg.split('/')[-2] + '.npy'
             file_labels_name = 'labels_dataset=' + args.dataset + '_pointnext_model=' + args.cfg.split('/')[-2] + '.npy'
             path_dists = os.path.join(os.path.dirname(args.cfg), file_dist_name)

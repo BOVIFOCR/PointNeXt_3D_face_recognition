@@ -37,7 +37,8 @@ model:
     NAME: ClsHeadArcface
 
     # num_classes: 100      # toy example
-    num_classes: 10572      # (whole dataset)
+    num_classes: 5000
+    # num_classes: 10572    # (whole dataset)
 
     # mlps: [512, 256]
     mlps: [512, 512]

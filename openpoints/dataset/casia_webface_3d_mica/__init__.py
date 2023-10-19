@@ -1,3 +1,4 @@
 from .casia_webface_3d_mica_loader import CASIA_WEBFACE_3D_MICA
 from .casia_webface_3d_100subj_loader import CASIA_WEBFACE_3D_MICA_100subj
+from .casia_webface_3d_5000subj_loader import CASIA_WEBFACE_3D_MICA_5000subj
 from .casia_webface_3d_10572subj_loader import CASIA_WEBFACE_3D_MICA_10572subj
