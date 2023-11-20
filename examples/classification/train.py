@@ -15,7 +15,7 @@ from openpoints.models import build_model_from_cfg
 from openpoints.models.layers import furthest_point_sample, fps
 
 from examples.face_verification.run_verification_test_one_dataset import VerificationTester
-from openpoints.utils.save_batch_faces import save_batch_faces, save_batch_samples
+from openpoints.utils.save_batch_faces import save_batch_faces, save_batch_samples, save_gradients
 
 
 def get_features_by_keys(input_features_dim, data):
@@ -208,7 +208,7 @@ def main(gpu, cfg, profile=False):
             train_loader.dataset.epoch = epoch - 1
         train_loss, train_macc, train_oa, _, _ = \
             train_one_epoch(model, train_loader,
-                            optimizer, scheduler, epoch, cfg)
+                            optimizer, scheduler, epoch, cfg, writer)
 
         is_best = False
         if epoch % cfg.val_freq == 0:
@@ -276,7 +276,7 @@ def main(gpu, cfg, profile=False):
         writer.close()
     dist.destroy_process_group()
 
-def train_one_epoch(model, train_loader, optimizer, scheduler, epoch, cfg):
+def train_one_epoch(model, train_loader, optimizer, scheduler, epoch, cfg, writer):
     loss_meter = AverageMeter()
     cm = ConfusionMatrix(num_classes=cfg.num_classes)
     npoints = cfg.num_points
@@ -313,6 +313,9 @@ def train_one_epoch(model, train_loader, optimizer, scheduler, epoch, cfg):
         else:
             logits, loss = model.get_logits_loss(data, target) if not hasattr(model, 'module') else model.module.get_logits_loss(data, target)
         loss.backward()
+
+        if hasattr(cfg, 'save_gradients') and cfg.save_gradients:
+            save_gradients(os.path.join(cfg.run_dir, 'train_gradients'), epoch, idx, model, writer)
 
         # optimize
         if num_iter == cfg.step_per_update:

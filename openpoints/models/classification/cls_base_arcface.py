@@ -128,6 +128,7 @@ class ClsHeadArcface(nn.Module):
         else:
             mlps = [in_channels, num_classes]
 
+        '''
         heads = []
         for i in range(len(mlps) - 2):
             heads.append(create_linearblock(mlps[i], mlps[i + 1],
@@ -138,6 +139,7 @@ class ClsHeadArcface(nn.Module):
         # heads.append(create_linearblock(mlps[-2], mlps[-1], act_args=None))  # original (last classification layer: 256 x num_classes)
         heads.append(create_linearblock(mlps[-3], mlps[-2], act_args=None))    # Bernardo (adapted to add arcface loss: 512 x 512)
         self.head = nn.Sequential(*heads)
+        '''
 
         # Bernardo
         self.weight = nn.Parameter(torch.Tensor(num_classes, mlps[-2]))

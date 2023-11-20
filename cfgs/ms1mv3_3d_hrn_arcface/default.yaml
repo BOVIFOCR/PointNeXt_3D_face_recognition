@@ -75,6 +75,9 @@ val_other_datasets: null
 save_intermediate_data: True
 # save_intermediate_data: False
 
+save_gradients: True
+# save_gradients: False
+
 feature_keys: pos
 
 datatransforms:

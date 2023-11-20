@@ -2,6 +2,8 @@ import sys
 import pickle
 import os
 import cv2
+import wandb
+import numpy as np
  
 def save_batch_faces(data, path):
     # move tensor from GPU to CPU
@@ -79,7 +81,6 @@ def write_obj(save_path, vertices, faces=None, UVs=None, faces_uv=None, normals=
 
 
 def save_batch_samples(dir_path, epoch, batch_idx, points_orig, points_sampl, pointclouds_outputs_layers=None):
-    # print('points_orig.shape:', points_orig.shape)
     dir_sample = f'epoch={epoch}_batch={batch_idx}'
     path_dir_sample = os.path.join(dir_path, dir_sample)
     os.makedirs(path_dir_sample, exist_ok=True)
@@ -96,3 +97,25 @@ def save_batch_samples(dir_path, epoch, batch_idx, points_orig, points_sampl, po
                 interm_pcs, interm_feat = pointclouds_outputs_layers[interm_layer_idx]
                 path_save_interm_pc_sample = os.path.join(path_dir_sample, f'batch_idx={batch_idx}_sample={sample_idx}_interm_layer={interm_layer_idx}.obj')
                 write_obj(path_save_interm_pc_sample, interm_pcs[sample_idx])
+
+
+def save_gradients(dir_path, epoch, batch_idx, model, writer):
+    dir_gradients = f'epoch={epoch}_batch={batch_idx}'
+    path_dir_gradients = os.path.join(dir_path, dir_gradients)
+    os.makedirs(path_dir_gradients, exist_ok=True)
+
+    if writer is not None:
+        for p_idx, (name, param) in enumerate(model.named_parameters()):
+            if not param.grad is None:
+                param_grad_cpu = param.grad.squeeze().data.cpu().numpy()
+                if len(param_grad_cpu.shape) == 1:
+                    param_grad_cpu = np.expand_dims(param_grad_cpu, axis=1)
+                if param_grad_cpu.shape[0] > param_grad_cpu.shape[1]:
+                    param_grad_cpu = np.transpose(param_grad_cpu)
+
+                # print('param_grad_cpu    name:', name, '    shape:', param_grad_cpu.shape)
+                writer.add_image(f'train_grads_{name}_shape={param_grad_cpu.shape}', param_grad_cpu, epoch, dataformats='HW')
+
+        # TODO
+        # group all gradients in one single image and save it
+        # writer.add_images()
