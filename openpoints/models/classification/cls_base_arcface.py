@@ -29,16 +29,25 @@ class BaseClsArcface(nn.Module):
             self.prediction = nn.Identity()
         self.criterion = build_criterion_from_cfg(criterion_args) if criterion_args is not None else None
 
-    def forward(self, data):
-        global_feat = self.encoder.forward_cls_feat(data)
-        return self.prediction(global_feat)
+    def forward(self, data, get_intermediate_data=False):
+        # global_feat = self.encoder.forward_cls_feat(data)
+        if get_intermediate_data:
+            global_feat, pointclouds_outputs_layers = self.encoder.forward_cls_feat(data, f0=None, get_intermediate_data=get_intermediate_data)
+            return self.prediction(global_feat), pointclouds_outputs_layers
+        else:
+            global_feat = self.encoder.forward_cls_feat(data)   # original
+            return self.prediction(global_feat)                 # original
 
     def get_loss(self, pred, gt, inputs=None):
         return self.criterion(pred, gt.long())
 
-    def get_logits_loss(self, data, gt):
-        logits = self.forward(data)
-        return logits, self.criterion(logits, gt.long())
+    def get_logits_loss(self, data, gt, get_intermediate_data=False):
+        if get_intermediate_data:
+            logits, pointclouds_outputs_layers = self.forward(data, get_intermediate_data)
+            return logits, self.criterion(logits, gt.long()), pointclouds_outputs_layers
+        else:
+            logits = self.forward(data)
+            return logits, self.criterion(logits, gt.long())
 
     def get_face_embedding(self, data):
         global_feat = self.encoder.forward_cls_feat(data)

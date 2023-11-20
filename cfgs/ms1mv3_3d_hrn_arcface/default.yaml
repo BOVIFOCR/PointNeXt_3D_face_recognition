@@ -72,6 +72,9 @@ num_points: 1024  # number of poins actually used in training and evaluation
 val_other_datasets: null
 # val_other_datasets: ['lfw']
 
+save_intermediate_data: True
+# save_intermediate_data: False
+
 feature_keys: pos
 
 datatransforms:

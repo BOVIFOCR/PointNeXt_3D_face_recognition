@@ -1,3 +1,4 @@
+import sys
 import pickle
 import os
 import cv2
@@ -77,7 +78,7 @@ def write_obj(save_path, vertices, faces=None, UVs=None, faces_uv=None, normals=
                 wf.write(row)
 
 
-def save_batch_samples(dir_path, epoch, batch_idx, points_orig, points_sampl):
+def save_batch_samples(dir_path, epoch, batch_idx, points_orig, points_sampl, pointclouds_outputs_layers=None):
     # print('points_orig.shape:', points_orig.shape)
     dir_sample = f'epoch={epoch}_batch={batch_idx}'
     path_dir_sample = os.path.join(dir_path, dir_sample)
@@ -89,3 +90,9 @@ def save_batch_samples(dir_path, epoch, batch_idx, points_orig, points_sampl):
 
         path_save_points_sampl_sample = os.path.join(path_dir_sample, f'batch_idx={batch_idx}_sample={sample_idx}_points_sampl.obj')
         write_obj(path_save_points_sampl_sample, points_sampl[sample_idx])
+
+        if not pointclouds_outputs_layers is None:
+            for interm_layer_idx in range(len(pointclouds_outputs_layers)):
+                interm_pcs, interm_feat = pointclouds_outputs_layers[interm_layer_idx]
+                path_save_interm_pc_sample = os.path.join(path_dir_sample, f'batch_idx={batch_idx}_sample={sample_idx}_interm_layer={interm_layer_idx}.obj')
+                write_obj(path_save_interm_pc_sample, interm_pcs[sample_idx])
