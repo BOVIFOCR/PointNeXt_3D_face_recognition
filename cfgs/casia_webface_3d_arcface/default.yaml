@@ -16,23 +16,24 @@ dataset:
 
   train:
     split: train
-    num_points: 1024  # in training, use sampled 1024 points for data augmentation.
-    # num_points: 2048
+    # num_points: 1024  # in training, use sampled 1024 points for data augmentation.
+    num_points: 2048
     # num_points: 2900  # Default value for MS1MV3-3D reconstructed by MICA
   val:
     split: test
-    num_points: 1024  # in testing, use uniformly pre-sampled 1024 points for evaluation (following https://github.com/lulutang0608/Point-BERT)
-    # num_points: 2048
+    # num_points: 1024  # in testing, use uniformly pre-sampled 1024 points for evaluation (following https://github.com/lulutang0608/Point-BERT)
+    num_points: 2048
     # num_points: 2900  # Default value for MS1MV3-3D reconstructed by MICA
 
 # Dataset Related
-num_points: 1024  # number of poins actually used in training and evaluation
-# num_points: 2048
+# num_points: 1024  # number of poins actually used in training and evaluation
+num_points: 2048
 # num_points: 2900  # Default value for MS1MV3-3D reconstructed by MICA
 
 # Bernardo
-val_other_datasets: null
+# val_other_datasets: null
 # val_other_datasets: ['lfw']
+val_other_datasets: ['bupt_mica']
 
 feature_keys: pos
 
@@ -60,7 +61,10 @@ dataloader:
 # ---------------------------------------------------------------------------- #
 
 # Training parameters
-lr: 0.001
+# lr: 0.001
+# lr: 0.0005
+lr: 0.0001
+# lr: 0.0002
 # lr: 0.0001
 
 # this one is better. 
@@ -90,7 +94,7 @@ print_freq: 10
 val_freq: 1
 
 # ----------------- Model related
-val_batch_size: 64     # original
+val_batch_size: 32     # original
 # val_batch_size: 128
 pretrained_path: null
 
