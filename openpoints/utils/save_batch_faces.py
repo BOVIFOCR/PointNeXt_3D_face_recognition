@@ -100,9 +100,9 @@ def save_batch_samples(dir_path, epoch, batch_idx, points_orig, points_sampl, po
 
 
 def save_gradients(dir_path, epoch, batch_idx, model, writer):
-    dir_gradients = f'epoch={epoch}_batch={batch_idx}'
-    path_dir_gradients = os.path.join(dir_path, dir_gradients)
-    os.makedirs(path_dir_gradients, exist_ok=True)
+    # dir_gradients = f'epoch={epoch}_batch={batch_idx}'
+    # path_dir_gradients = os.path.join(dir_path, dir_gradients)
+    # os.makedirs(path_dir_gradients, exist_ok=True)
 
     if writer is not None:
         for p_idx, (name, param) in enumerate(model.named_parameters()):
