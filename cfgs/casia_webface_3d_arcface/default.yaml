@@ -1,18 +1,25 @@
 
 # num_classes: 100
-num_classes: 10572
+num_classes: 5000
+# num_classes: 10572
 
 wandb:
   # project: PointNeXt_CASIA-WEBFACE-3D-MICA_100classes
-  project: PointNeXt_CASIA-WEBFACE-3D-MICA_10572classes (whole dataset)
+  project: PointNeXt_CASIA-WEBFACE-3D-MICA_5000classes
+  # project: PointNeXt_CASIA-WEBFACE-3D-MICA_10572classes (whole dataset)
 
 dataset:
   common:
     # NAME: CASIA_WEBFACE_3D_MICA_100subj      # 100 CLASSES (toy example)
     # data_dir: '/datasets2/frcsyn_wacv2024/datasets/3D_reconstruction_MICA/real/1_CASIA-WebFace/output_100class'  # duo
 
-    NAME: CASIA_WEBFACE_3D_MICA_10572subj      # 10572 CLASSES (whole dataset)
-    data_dir: '/datasets2/frcsyn_wacv2024/datasets/3D_reconstruction_MICA/real/1_CASIA-WebFace/imgs_crops_112x112/output'  # duo
+    NAME: CASIA_WEBFACE_3D_MICA_5000subj      # 100 CLASSES (toy example)
+    # data_dir: '/datasets2/frcsyn_wacv2024/datasets/3D_reconstruction_MICA/real/1_CASIA-WebFace/output_5000class'  # duo
+    data_dir: '/nobackup/unico/frcsyn_wacv2024/datasets/3D_reconstruction_MICA/real/1_CASIA-WebFace/imgs_crops_112x112/output_5000class'  # diolkos
+
+    # NAME: CASIA_WEBFACE_3D_MICA_10572subj      # 10572 CLASSES (whole dataset)
+    # data_dir: '/datasets2/frcsyn_wacv2024/datasets/3D_reconstruction_MICA/real/1_CASIA-WebFace/imgs_crops_112x112/output'  # duo
+    # data_dir: '/groups/unico/frcsyn_wacv2024/datasets/3D_reconstruction_MICA/real/1_CASIA-WebFace/imgs_crops_112x112/output'
 
   train:
     split: train
@@ -83,8 +90,10 @@ grad_norm_clip: 1
 
 criterion_args:   # args passed to openpoints/loss/build.py -> ArcFace.__init__()
   NAME: ArcFace   # for face recognition
-  margin: 0.25
-  scale: 16
+  # margin: 0.25
+  margin: 0.1
+  # margin: 0.01
+  scale: 32
 
 # ---------------------------------------------------------------------------- #
 # io and misc

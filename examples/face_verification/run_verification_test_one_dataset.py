@@ -42,6 +42,7 @@ def parse_args():
 
     # FOR FUSION TESTS
     parser.add_argument('--arcdists', type=str, default='/datasets1/bjgbiesseck/MS-Celeb-1M/faces_emore/lfw_distances_arcface=1000class_acc=0.93833.npy', help='dataset name')
+    parser.add_argument('--save-dist', action='store_true', default=False, help='')
 
     parser.add_argument('--profile', action='store_true', default=False, help='set to True to profile speed')
     args, opts = parser.parse_known_args()
@@ -104,10 +105,13 @@ class VerificationTester:
 
 
         # BUPT
-        self.BUPT_MICA_POINT_CLOUDS = '/datasets2/frcsyn_wacv2024/datasets/3D_reconstruction_MICA/real/3_BUPT-BalancedFace/race_per_7000_crops_112x112/output'   # duo
-        self.BUPT_VERIF_PAIRS_LIST = '/datasets2/frcsyn_wacv2024/comparison_files/comparison_files/sub-tasks_1.1_1.2/bupt_comparison.txt'                        # duo
+        # self.BUPT_MICA_POINT_CLOUDS = '/datasets2/frcsyn_wacv2024/datasets/3D_reconstruction_MICA/real/3_BUPT-BalancedFace/race_per_7000_crops_112x112/output'    # duo
+        # self.BUPT_VERIF_PAIRS_LIST = '/datasets2/frcsyn_wacv2024/comparison_files/comparison_files/sub-tasks_1.1_1.2/bupt_comparison.txt'                         # duo
+        # self.BUPT_MICA_POINT_CLOUDS = '/groups/unico/frcsyn_wacv2024/datasets/3D_reconstruction_MICA/real/3_BUPT-BalancedFace/race_per_7000_crops_112x112/output'   # daugman
+        # self.BUPT_VERIF_PAIRS_LIST = '/groups/unico/frcsyn_wacv2024/comparison_files/comparison_files/sub-tasks_1.1_1.2/bupt_comparison.txt'                        # daugman
+        self.BUPT_MICA_POINT_CLOUDS = '/groups/unico/frcsyn_wacv2024/datasets/3D_reconstruction_MICA/real/3_BUPT-BalancedFace/race_per_7000_crops_112x112/output'   # daugman
+        self.BUPT_VERIF_PAIRS_LIST = '/groups/unico/frcsyn_wacv2024/comparison_files/comparison_files/sub-tasks_1.1_1.2/bupt_comparison.txt'                        # daugman
 
-        
 
 
     def pc_normalize(self, pc):
@@ -274,23 +278,23 @@ class VerificationTester:
         distances = torch.zeros(int(face_embedd.size()[0]/2))
         for i in range(0, face_embedd.size()[0], 2):
             embedd0, embedd1 = face_embedd[i], face_embedd[i+1]
-            distances[int(i/2)] = torch.sum( torch.square( F.normalize(torch.unsqueeze(embedd0, 0)) - F.normalize(torch.unsqueeze(embedd1, 0)) ) )
-        # if verbose:
-        #     print('distances:', distances)
-        #     print('distances.size():', distances.size())
+            distances[int(i/2)] = torch.sum( torch.square( F.normalize(torch.unsqueeze(embedd0, 0)) - F.normalize(torch.unsqueeze(embedd1, 0)) ), 1) / 2.
         return distances
-    
 
-    def compute_embeddings_cosine_distance(self, face_embedd, verbose=True):
+
+    def compute_embeddings_cosine_similarity(self, face_embedd, verbose=True):
         assert face_embedd.size()[0] % 2 == 0
         distances = torch.zeros(int(face_embedd.size()[0]/2))
         for i in range(0, face_embedd.size()[0], 2):
             embedd0, embedd1 = face_embedd[i], face_embedd[i+1]
-            # distances[int(i/2)] = torch.sum( torch.square( F.normalize(torch.unsqueeze(embedd0, 0)) - F.normalize(torch.unsqueeze(embedd1, 0)) ) )
-            distances[int(i/2)] = 1 - torch.dot(embedd0, embedd1)/(torch.linalg.norm(embedd0)*torch.linalg.norm(embedd1))
-        # if verbose:
-        #     print('distances:', distances)
-        #     print('distances.size():', distances.size())
+            embedd0, embedd1 = F.normalize(torch.unsqueeze(embedd0, 0))[0], F.normalize(torch.unsqueeze(embedd1, 0))[0]
+            distances[int(i/2)] = torch.maximum(torch.dot(embedd0, embedd1)/(torch.linalg.norm(embedd0)*torch.linalg.norm(embedd1)), torch.tensor(0.0)).float()
+        return distances
+
+
+    def compute_embeddings_cosine_distance(self, face_embedd, verbose=True):
+        assert face_embedd.size()[0] % 2 == 0
+        distances = 1. - self.compute_embeddings_cosine_similarity(face_embedd)
         return distances
 
 
@@ -401,8 +405,9 @@ class VerificationTester:
                 if verbose:
                     print('computing distances')
                 
-                dist = self.compute_embeddings_distance_insightface(embedd, verbose=verbose)
-                # dist = self.compute_embeddings_cosine_distance(embedd, verbose=verbose)
+                # dist = self.compute_embeddings_distance_insightface(embedd, verbose=verbose)
+                dist = self.compute_embeddings_cosine_distance(embedd, verbose=verbose)
+                # dist = self.compute_embeddings_cosine_similarity(embedd, verbose=verbose)
                 
                 if verbose:
                     print('dist.size():', dist.size())
@@ -640,30 +645,92 @@ class VerificationTester:
         return tar_mean, tar_std, far_mean, ta_idx, fa_idx
 
 
+    def get_fnmr_fmr_analyze_races(self, threshold, dist, actual_issame, races_list, subj_list, races_combs):
+        predict_issame = np.less(dist, threshold)
+        tp = np.sum(np.logical_and(predict_issame, actual_issame))
+        fp = np.sum(np.logical_and(predict_issame, np.logical_not(actual_issame)))
+        tn = np.sum(np.logical_and(np.logical_not(predict_issame), np.logical_not(actual_issame)))
+        fn = np.sum(np.logical_and(np.logical_not(predict_issame), actual_issame))
+
+        fnmr = 0 if (fn + tp == 0) else float(fn) / float(fn + tp)
+        fmr = 0  if (fp + tn == 0) else float(fp) / float(fp + tn)
+
+        return fnmr, fmr
+
+
+    def calculate_fnmr_fmr_analyze_races(self, thresholds,
+                                        dist,
+                                        actual_issame,
+                                        fmr_targets,
+                                        nrof_folds=10,
+                                        verbose=True):
+        # assert (embeddings1.shape[0] == embeddings2.shape[0])
+        # assert (embeddings1.shape[1] == embeddings2.shape[1])
+        nrof_pairs = min(len(actual_issame), dist.shape[0])
+        nrof_thresholds = len(thresholds)
+        k_fold = LFold(n_splits=nrof_folds, shuffle=False)
+
+        fnmr = {}
+        for fmr_target in fmr_targets:
+            fnmr[fmr_target] = np.zeros(nrof_folds)
+        fmr = np.zeros(nrof_folds)
+
+        # diff = np.subtract(embeddings1, embeddings2)
+        # dist = np.sum(np.square(diff), 1)
+        indices = np.arange(nrof_pairs)
+        metrics_races = [None] * nrof_folds
+
+        for fold_idx, (train_set, test_set) in enumerate(k_fold.split(indices)):
+            if verbose:
+                print('calculate_fnmr_fmr - fold_idx: '+str(fold_idx)+'/'+str(nrof_folds-1), end='\r')
+
+            # Find the threshold that gives FMR = fmr_target
+            fmr_train = np.zeros(nrof_thresholds)
+            for threshold_idx, threshold in enumerate(thresholds):
+                _, fmr_train[threshold_idx] = self.get_fnmr_fmr_analyze_races(
+                    threshold, dist[train_set], actual_issame[train_set], races_list=None, subj_list=None, races_combs=None)
+
+            f = interpolate.interp1d(fmr_train, thresholds, kind='slinear')
+            for fmr_target in fmr_targets:
+                threshold = f(fmr_target)
+                fnmr[fmr_target][fold_idx], fmr[fold_idx] = self.get_fnmr_fmr_analyze_races(
+                    threshold, dist[test_set], actual_issame[test_set], races_list=None, subj_list=None, races_combs=None)
+
+        if verbose:
+            print('')
+
+        fnmr_mean, fnmr_std = {}, {}
+        for fmr_target in fmr_targets:
+            fnmr_mean[fmr_target] = np.mean(fnmr[fmr_target])
+            fnmr_std[fmr_target] = np.std(fnmr[fmr_target])
+        fmr_mean = np.mean(fmr)
+        return fnmr_mean, fnmr_std, fmr_mean
+
+
     def do_k_fold_test(self, folds_pair_distances, folds_pair_labels, folds_indexes, verbose=True):
         thresholds = np.arange(0, 4, 0.01)
-        # tpr, fpr, accuracy = self.calculate_roc(thresholds, folds_pair_distances, folds_pair_labels, nrof_folds=10, verbose=verbose)
         tpr, fpr, accuracy, tp_idx, fp_idx, tn_idx, fn_idx = self.calculate_roc(thresholds, folds_pair_distances, folds_pair_labels, nrof_folds=10, verbose=verbose)
-        # print('tp_idx.shape:', tp_idx.shape)
-        # print('fp_idx.shape:', fp_idx.shape)
-        # print('tn_idx.shape:', tn_idx.shape)
-        # print('fn_idx.shape:', fn_idx.shape)
 
         thresholds = np.arange(0, 4, 0.001)
-        # tar_mean, tar_std, far_mean = self.calculate_tar(thresholds, folds_pair_distances, folds_pair_labels, far_target=1e-3, nrof_folds=10, verbose=verbose)
         tar_mean, tar_std, far_mean, ta_idx, fa_idx = self.calculate_tar(thresholds, folds_pair_distances, folds_pair_labels, far_target=1e-3, nrof_folds=10, verbose=verbose)
-        # print('ta_idx.shape:', ta_idx.shape)
-        # print('fa_idx.shape:', fa_idx.shape)
+
+        thresholds = np.arange(0, 4, 0.0001)
+        fmr_targets = [1e-2, 1e-3, 1e-4]
+        fnmr_mean, fnmr_std, fmr_mean = self.calculate_fnmr_fmr_analyze_races(thresholds,
+                                                    folds_pair_distances,
+                                                    folds_pair_labels,
+                                                    fmr_targets,
+                                                    nrof_folds=10,
+                                                    verbose=verbose)
 
         if verbose:
             print('------------')
 
-        # return tpr, fpr, accuracy, tar_mean, tar_std, far_mean
-        return tpr, fpr, accuracy, tar_mean, tar_std, far_mean, \
+        return tpr, fpr, accuracy, tar_mean, tar_std, far_mean, fnmr_mean, fnmr_std, fmr_mean, \
             tp_idx, fp_idx, tn_idx, fn_idx, ta_idx, fa_idx
 
 
-    def do_verification_test(self, model, dataset='LFW', num_points=2048, batch_size=32, verbose=True):
+    def do_verification_test(self, args, model, dataset='LFW', num_points=2048, batch_size=32, verbose=True):
         model.eval()
 
         # # Load one point cloud (test)
@@ -675,14 +742,24 @@ class VerificationTester:
         folds_pair_distances = self.compute_set_distances(model, folds_pair_cache, batch_size, verbose=verbose)
         folds_pair_distances = folds_pair_distances.cpu().detach().numpy()
 
+        if not args is None and args.save_dist:
+            file_dist_name = 'dist_dataset=' + args.dataset + '_pointnext_model=' + args.cfg.split('/')[-2] + '.npy'
+            file_labels_name = 'labels_dataset=' + args.dataset + '_pointnext_model=' + args.cfg.split('/')[-2] + '.npy'
+            path_dists = os.path.join(os.path.dirname(args.cfg), file_dist_name)
+            path_labels = os.path.join(os.path.dirname(args.cfg), file_labels_name)
+            print(f'\nSaving distances at \'{path_dists}\' ...')
+            np.save(path_dists, folds_pair_distances)
+            print(f'Saving labels at \'{path_labels}\' ...\n')
+            np.save(path_labels, folds_pair_labels)
+
         # tpr, fpr, accuracy, tar_mean, tar_std, far_mean = self.do_k_fold_test(folds_pair_distances, folds_pair_labels, folds_indexes, verbose=verbose)
-        tpr, fpr, accuracy, tar_mean, tar_std, far_mean, \
+        tpr, fpr, accuracy, tar_mean, tar_std, far_mean, fnmr_mean, fnmr_std, fmr_mean, \
             tp_idx, fp_idx, tn_idx, fn_idx, ta_idx, fa_idx = self.do_k_fold_test(folds_pair_distances, folds_pair_labels, folds_indexes, verbose=verbose)
         acc_mean, acc_std = np.mean(accuracy), np.std(accuracy)
         # print(f'acc_mean={acc_mean},    acc_std={acc_std}')
 
         # return acc_mean, acc_std, tar_mean, tar_std, far_mean
-        return acc_mean, acc_std, tar_mean, tar_std, far_mean, \
+        return acc_mean, acc_std, tar_mean, tar_std, far_mean, fnmr_mean, fnmr_std, fmr_mean, \
             tp_idx, fp_idx, tn_idx, fn_idx, ta_idx, fa_idx
 
 
@@ -723,8 +800,8 @@ if __name__ == "__main__":
     model.eval()
 
     # acc_mean, acc_std, tar, tar_std, far = verif_tester.do_verification_test(model, args.dataset, args.num_points, args.batch, verbose=True)
-    acc_mean, acc_std, tar, tar_std, far, \
-        tp_idx, fp_idx, tn_idx, fn_idx, ta_idx, fa_idx = verif_tester.do_verification_test(model, args.dataset, args.num_points, args.batch, verbose=True)
+    acc_mean, acc_std, tar, tar_std, far, fnmr_mean, fnmr_std, fmr_mean, \
+        tp_idx, fp_idx, tn_idx, fn_idx, ta_idx, fa_idx = verif_tester.do_verification_test(args, model, args.dataset, args.num_points, args.batch, verbose=True)
 
     if args.save_results:
         results_dict = {}
@@ -742,4 +819,6 @@ if __name__ == "__main__":
         verif_tester.save_results(results_dict, args, model='PointNeXt')
 
     print('\nFinal - dataset: %s  -  acc_mean: %.6f ± %.6f  -  tar: %.6f ± %.6f    far: %.6f)' % (args.dataset, acc_mean, acc_std, tar, tar_std, far))
+    for fmr_target in list(fnmr_mean.keys()):
+        print(' '*31 + 'FNMR: %1.5f+-%1.5f   FMR: %1.5f' % (fnmr_mean[fmr_target], fnmr_std[fmr_target], fmr_target))
     print('Finished!')
