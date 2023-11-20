@@ -77,12 +77,15 @@ def write_obj(save_path, vertices, faces=None, UVs=None, faces_uv=None, normals=
                 wf.write(row)
 
 
-def save_batch_samples(dir_path, epoch, batch_idx, batch_data):
-    # print('batch_data.shape:', batch_data.shape)
+def save_batch_samples(dir_path, epoch, batch_idx, points_orig, points_sampl):
+    # print('points_orig.shape:', points_orig.shape)
     dir_sample = f'epoch={epoch}_batch={batch_idx}'
     path_dir_sample = os.path.join(dir_path, dir_sample)
     os.makedirs(path_dir_sample, exist_ok=True)
 
-    for sample_idx in range(batch_data.shape[0]):
-        path_save_train_sample = os.path.join(path_dir_sample, f'batch_idx={batch_idx}_sample={sample_idx}.obj')
-        write_obj(path_save_train_sample, batch_data[sample_idx])
+    for sample_idx in range(points_orig.shape[0]):
+        path_save_points_orig_sample = os.path.join(path_dir_sample, f'batch_idx={batch_idx}_sample={sample_idx}_points_orig.obj')
+        write_obj(path_save_points_orig_sample, points_orig[sample_idx])
+
+        path_save_points_sampl_sample = os.path.join(path_dir_sample, f'batch_idx={batch_idx}_sample={sample_idx}_points_sampl.obj')
+        write_obj(path_save_points_sampl_sample, points_sampl[sample_idx])

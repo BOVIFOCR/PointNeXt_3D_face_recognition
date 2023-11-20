@@ -297,17 +297,19 @@ def train_one_epoch(model, train_loader, optimizer, scheduler, epoch, cfg):
 
         num_curr_pts = points.shape[1]
         if num_curr_pts > npoints:  # point resampling strategy
-            points = subsample_pointcloud(points, npoints)
+            points_samp = subsample_pointcloud(points, npoints)
+        else:
+            points_samp = points
 
-        data['pos'] = points[:, :, :3].contiguous()
-        data['x'] = points[:, :, :cfg.model.in_channels].transpose(1, 2).contiguous()
-
-        if epoch == 1 and idx == 0:
-            print(f'\nSaving train samples of epoch={epoch} batch={idx} in \'{cfg.run_dir}\'')
-            save_batch_samples(os.path.join(cfg.run_dir, 'train_samples'), epoch, idx, data['pos'])
+        data['pos'] = points_samp[:, :, :3].contiguous()
+        data['x'] = points_samp[:, :, :cfg.model.in_channels].transpose(1, 2).contiguous()
 
         logits, loss = model.get_logits_loss(data, target) if not hasattr(model, 'module') else model.module.get_logits_loss(data, target)
         loss.backward()
+
+        if epoch == 1 and idx == 0:
+            print(f'\nSaving train samples of epoch={epoch} batch={idx} in \'{cfg.run_dir}\'')
+            save_batch_samples(os.path.join(cfg.run_dir, 'train_samples'), epoch, idx, points, data['pos'])
 
         # optimize
         if num_iter == cfg.step_per_update:
@@ -346,17 +348,19 @@ def validate(model, val_loader, epoch, cfg):
         # Copied from 'train_one_epoch()' method
         num_curr_pts = points.shape[1]
         if num_curr_pts > npoints:  # point resampling strategy
-            points = subsample_pointcloud(points, npoints)
+            points_samp = subsample_pointcloud(points, npoints)
+        else:
+            points_samp = points
 
-        data['pos'] = points[:, :, :3].contiguous()
-        data['x'] = points[:, :, :cfg.model.in_channels].transpose(1, 2).contiguous()
-
-        if epoch == 1 and idx == 0:
-            print(f'\nSaving val samples of epoch={epoch} batch={idx} in \'{cfg.run_dir}\'')
-            save_batch_samples(os.path.join(cfg.run_dir, 'val_samples'), epoch, idx, data['pos'])
+        data['pos'] = points_samp[:, :, :3].contiguous()
+        data['x'] = points_samp[:, :, :cfg.model.in_channels].transpose(1, 2).contiguous()
 
         logits = model(data)
         cm.update(logits.argmax(dim=1), target)
+
+        if epoch == 1 and idx == 0:
+            print(f'\nSaving val samples of epoch={epoch} batch={idx} in \'{cfg.run_dir}\'')
+            save_batch_samples(os.path.join(cfg.run_dir, 'val_samples'), epoch, idx, points, data['pos'])
 
     tp, count = cm.tp, cm.count
     if cfg.distributed:

@@ -1,23 +1,24 @@
 
-# num_classes: 22
+num_classes: 22
 # num_classes: 1000
 # num_classes: 2000
-num_classes: 5000
+# num_classes: 5000
 # num_classes: 10000
 # num_classes: 93424
 
 wandb:
   # project: TEST_MULTI-GPU_PointNeXt_MS1MV3-3D-HRN_22classes
+  project: PointNeXt_MS1MV3-3D-HRN_22classes
   # project: PointNeXt_MS1MV3-3D-HRN_1000classes
   # project: PointNeXt_MS1MV3-3D-HRN_2000classes
-  project: PointNeXt_MS1MV3-3D-HRN_5000classes
+  # project: PointNeXt_MS1MV3-3D-HRN_5000classes
   # project: PointNeXt_MS1MV3-3D-HRN_10000classes
   # project: PointNeXt_MS1MV3-3D-HRN_93424classes (whole dataset)
 
 dataset:
   common:
-    # NAME: MS1MV3_3D_HRN_22subj     # 22 CLASSES (toy example)
-    # data_dir: '/datasets1/bjgbiesseck/MS-Celeb-1M/ms1m-retinaface-t1/3D_reconstruction/HRN/images_reduced'   # duo
+    NAME: MS1MV3_3D_HRN_22subj     # 22 CLASSES (toy example)
+    data_dir: '/datasets1/bjgbiesseck/MS-Celeb-1M/ms1m-retinaface-t1/3D_reconstruction/HRN/images_reduced'   # duo
     # data_dir: '/nobackup/unico/datasets/face_recognition/HRN/images_reduced'                               # diolkos
     # data_dir: '/nobackup1/bjgbiesseck/datasets/MS-Celeb-1M_3D_reconstruction_originalMICA/images_22subj'   # peixoto
 
@@ -27,8 +28,8 @@ dataset:
     # NAME: MS1MV3_3D_HRN_2000subj   # 2000 CLASSES
     # data_dir: '/home/bjgbiesseck/GitHub/BOVIFOCR_MICA_3Dreconstruction/demo/output/MS-Celeb-1M_3D_reconstruction_originalMICA/ms1m-retinaface-t1/images_2000subj'  # duo
 
-    NAME: MS1MV3_3D_HRN_5000subj   # 5000 CLASSES
-    data_dir: '/datasets1/bjgbiesseck/MS-Celeb-1M/ms1m-retinaface-t1/3D_reconstruction/HRN/images5000subj'  # duo
+    # NAME: MS1MV3_3D_HRN_5000subj   # 5000 CLASSES
+    # data_dir: '/datasets1/bjgbiesseck/MS-Celeb-1M/ms1m-retinaface-t1/3D_reconstruction/HRN/images5000subj'  # duo
 
     # NAME: MS1MV3_3D_HRN_10000subj  # 10000 CLASSES
     # data_dir: '/datasets1/bjgbiesseck/MS-Celeb-1M/ms1m-retinaface-t1/3D_reconstruction/HRN/images10000subj'  # duo
@@ -38,9 +39,9 @@ dataset:
 
   train:
     split: train
-    # num_points: 1024  # in training, use sampled 1024 points for data augmentation.
+    num_points: 1024  # in training, use sampled 1024 points for data augmentation.
     # num_points: 2048
-    num_points: 2000      # For MS1MV3-3D-HRN
+    # num_points: 2000      # For MS1MV3-3D-HRN
     # num_points: 2500    # For MS1MV3-3D-HRN
     # num_points: 5000    # For MS1MV3-3D-HRN
     # num_points: 10000   # For MS1MV3-3D-HRN
@@ -48,9 +49,9 @@ dataset:
     # num_points: 50000   # For MS1MV3-3D-HRN
   val:
     split: test
-    # num_points: 1024  # in testing, use uniformly pre-sampled 1024 points for evaluation (following https://github.com/lulutang0608/Point-BERT)
+    num_points: 1024  # in testing, use uniformly pre-sampled 1024 points for evaluation (following https://github.com/lulutang0608/Point-BERT)
     # num_points: 2048
-    num_points: 2000      # For MS1MV3-3D-HRN
+    # num_points: 2000      # For MS1MV3-3D-HRN
     # num_points: 2500    # For MS1MV3-3D-HRN
     # num_points: 5000    # For MS1MV3-3D-HRN
     # num_points: 10000   # For MS1MV3-3D-HRN
@@ -58,9 +59,9 @@ dataset:
     # num_points: 50000   # For MS1MV3-3D-HRN
 
 # Dataset Related
-# num_points: 1024  # number of poins actually used in training and evaluation
+num_points: 1024  # number of poins actually used in training and evaluation
 # num_points: 2048
-num_points: 2000      # For MS1MV3-3D-HRN
+# num_points: 2000      # For MS1MV3-3D-HRN
 # num_points: 2500    # For MS1MV3-3D-HRN
 # num_points: 5000    # For MS1MV3-3D-HRN
 # num_points: 10000   # For MS1MV3-3D-HRN
@@ -68,8 +69,8 @@ num_points: 2000      # For MS1MV3-3D-HRN
 # num_points: 50000   # For MS1MV3-3D-HRN
 
 # Bernardo
-# val_other_datasets: null
-val_other_datasets: ['lfw']
+val_other_datasets: null
+# val_other_datasets: ['lfw']
 
 feature_keys: pos
 
@@ -84,8 +85,8 @@ datatransforms:
 # batch_size: 4
 # batch_size: 8
 # batch_size: 16
-batch_size: 28
-# batch_size: 32     # original
+# batch_size: 28
+batch_size: 32     # original
 # batch_size: 64
 # batch_size: 128
 
@@ -102,9 +103,9 @@ dataloader:
 # ---------------------------------------------------------------------------- #
 
 # Training parameters
-lr: 0.01
+# lr: 0.01
 # lr: 0.005
-# lr: 0.001
+lr: 0.001
 # lr: 0.0005
 # lr: 0.00025
 # lr: 0.0001
